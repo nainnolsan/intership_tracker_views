@@ -1,0 +1,49 @@
+# Suggested Folder Structure
+
+```text
+intership_tracker_views/
+  docs/
+    API-CONTRACT.md
+    IMPLEMENTATION-PLAN.md
+    UI-TEST-CHECKLIST.md
+    FOLDER-STRUCTURE.md
+  src/
+    api/
+      httpClient.ts
+    app/
+      providers.tsx
+      routes.tsx
+    components/
+      ThemeToggle.tsx
+    context/
+      ThemeContext.tsx
+    features/
+      internships/
+        api/
+          internshipsApi.ts
+          mockData.ts
+        components/
+          ApplicationFormModal.tsx
+          ApplicationsTable.tsx
+          EmailConnectorCard.tsx
+          MetricCard.tsx
+          PageHeader.tsx
+          PipelineColumn.tsx
+          SankeyFunnel.tsx
+        constants/
+          stageMeta.ts
+        hooks/
+          useInternshipsData.ts
+    pages/
+      AnalyticsPage.tsx
+      ApplicationsPage.tsx
+      DashboardPage.tsx
+      EmailCenterPage.tsx
+      PipelineBoardPage.tsx
+    types/
+      internships.ts
+    App.tsx
+    App.css
+    index.css
+    main.tsx
+```
