@@ -1,22 +1,26 @@
 import EmailConnectorCard from '../features/internships/components/EmailConnectorCard';
 import PageHeader from '../features/internships/components/PageHeader';
-import { useEmailCenter } from '../features/internships/hooks/useInternshipsData';
-import { internshipsApi } from '../features/internships/api/internshipsApi';
+import { useEmailCenter, useConnectEmailProvider } from '../features/internships/hooks/useInternshipsData';
 
 export default function EmailCenterPage() {
   const emailCenterQuery = useEmailCenter();
+  const connectProvider = useConnectEmailProvider();
   const data = emailCenterQuery.data;
 
   const handleConnect = async (provider: 'gmail' | 'outlook') => {
     try {
-      const result = await internshipsApi.connectEmailProvider(provider);
-      window.open(result.redirectUrl, '_blank', 'noopener,noreferrer');
-    } catch {
-      // The API contract allows either redirectUrl or provider authUrl from status.
-      const fallback = data?.connectors.find((item) => item.provider === provider)?.authUrl;
-      if (fallback) {
-        window.open(fallback, '_blank', 'noopener,noreferrer');
+      const result = await connectProvider.mutateAsync(provider);
+      const redirectUrl = result?.data?.connectInternshipEmailProvider?.redirectUrl;
+      if (redirectUrl) {
+        window.open(redirectUrl, '_blank', 'noopener,noreferrer');
+        return;
       }
+    } catch {
+      // fall through to authUrl fallback
+    }
+    const fallback = data?.connectors.find((item) => item.provider === provider)?.authUrl;
+    if (fallback) {
+      window.open(fallback, '_blank', 'noopener,noreferrer');
     }
   };
 
