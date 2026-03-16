@@ -78,6 +78,13 @@
   backdrop-filter: blur(10px);
   color: var(--muted);
   font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.topbar-status {
   display: inline-flex;
   align-items: center;
   gap: 0.6rem;
@@ -89,6 +96,99 @@
   border-radius: 999px;
   background: var(--chip);
   display: inline-flex;
+}
+
+.user-menu {
+  position: relative;
+}
+
+.user-menu-trigger {
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 0.3rem 0.6rem 0.3rem 0.35rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  cursor: pointer;
+}
+
+.user-menu-trigger:hover {
+  background: var(--brand-soft);
+}
+
+.user-avatar {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--bg);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.user-meta {
+  display: grid;
+  text-align: left;
+  line-height: 1.1;
+}
+
+.user-meta strong {
+  font-size: 0.82rem;
+}
+
+.user-meta small {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.user-chevron {
+  font-size: 0.86rem;
+  color: var(--muted);
+}
+
+.user-menu-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.45rem);
+  min-width: 210px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+  box-shadow: var(--shadow);
+  padding: 0.35rem;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.user-menu-item {
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  border-radius: 8px;
+  padding: 0.5rem 0.55rem;
+  cursor: pointer;
+}
+
+.user-menu-item:hover {
+  background: var(--brand-soft);
+}
+
+.user-menu-item.danger {
+  color: color-mix(in srgb, var(--ink) 82%, #e11d48);
+}
+
+.user-menu-separator {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 0.25rem 0;
 }
 
 .view {
@@ -504,12 +604,28 @@ textarea:focus {
     padding: 1rem;
   }
 
-  .page-header {
-    flex-direction: column;
+  .content-topbar {
+    flex-wrap: wrap;
   }
 
-  .content-topbar {
-    display: flex;
+  .user-menu-trigger {
+    width: 100%;
+    justify-content: space-between;
+    border-radius: 14px;
+  }
+
+  .user-menu {
+    width: 100%;
+  }
+
+  .user-menu-dropdown {
+    left: 0;
+    right: auto;
+    width: 100%;
+  }
+
+  .page-header {
+    flex-direction: column;
   }
 
   .metric-grid,
