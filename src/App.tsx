@@ -31,7 +31,10 @@ function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const sessionProfile = useMemo(() => getSessionProfile(), []);
-  const { data } = useQuery<ProfileQueryData>(GET_PROFILE_QUERY, { fetchPolicy: 'cache-first' });
+  const { data } = useQuery<ProfileQueryData>(GET_PROFILE_QUERY, {
+    fetchPolicy: 'network-only',
+    nextFetchPolicy: 'cache-first',
+  });
 
   const profileName = (data?.me?.data?.name as string | undefined)?.trim() || sessionProfile.displayName;
   const profileEmail = (data?.me?.data?.email as string | undefined) || sessionProfile.email;
@@ -66,12 +69,6 @@ function App() {
     <>
       <div className="app-shell">
         <aside className="sidebar">
-          <div className="brand">
-            <p className="eyebrow">Internship Tracker</p>
-            <h2>Portfolio Ops</h2>
-            <p className="brand-copy">Applications, funnel progression, analytics, and recruiter email coordination.</p>
-          </div>
-
           <div className="sidebar-user-slot">
             <div className="user-menu" ref={menuRef}>
               <button
@@ -116,6 +113,12 @@ function App() {
                 </div>
               )}
             </div>
+          </div>
+
+          <div className="brand">
+            <p className="eyebrow">Internship Tracker</p>
+            <h2>Portfolio Ops</h2>
+            <p className="brand-copy">Applications, funnel progression, analytics, and recruiter email coordination.</p>
           </div>
 
           <nav>
