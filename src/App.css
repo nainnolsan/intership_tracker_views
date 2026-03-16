@@ -5,6 +5,9 @@
 }
 
 .sidebar {
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  gap: 0.85rem;
   border-right: 1px solid var(--line);
   background: color-mix(in srgb, var(--paper) 82%, transparent);
   backdrop-filter: blur(10px);
@@ -15,7 +18,7 @@
 }
 
 .brand {
-  margin-bottom: 2rem;
+  margin-bottom: 0.2rem;
 }
 
 .eyebrow {
@@ -66,36 +69,8 @@
   padding: 1.5rem;
 }
 
-.content-topbar {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  margin-bottom: 1rem;
-  padding: 0.8rem 1rem;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--paper) 88%, transparent);
-  backdrop-filter: blur(10px);
-  color: var(--muted);
-  font-size: 0.9rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.8rem;
-}
-
-.topbar-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.6rem;
-}
-
-.status-dot {
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 999px;
-  background: var(--chip);
-  display: inline-flex;
+.sidebar-user-slot {
+  margin-bottom: 0.35rem;
 }
 
 .user-menu {
@@ -106,10 +81,12 @@
   border: 1px solid var(--line);
   background: var(--paper);
   color: var(--ink);
-  border-radius: 999px;
-  padding: 0.3rem 0.6rem 0.3rem 0.35rem;
+  border-radius: 14px;
+  padding: 0.5rem 0.62rem 0.5rem 0.45rem;
+  width: 100%;
   display: inline-flex;
   align-items: center;
+  justify-content: space-between;
   gap: 0.55rem;
   cursor: pointer;
 }
@@ -154,9 +131,10 @@
 
 .user-menu-dropdown {
   position: absolute;
-  right: 0;
+  left: 0;
+  right: auto;
   top: calc(100% + 0.45rem);
-  min-width: 210px;
+  width: 100%;
   border: 1px solid var(--line);
   border-radius: 12px;
   background: var(--paper);
@@ -602,10 +580,6 @@ textarea:focus {
 @media (max-width: 760px) {
   .content-area {
     padding: 1rem;
-  }
-
-  .content-topbar {
-    flex-wrap: wrap;
   }
 
   .user-menu-trigger {

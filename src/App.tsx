@@ -1,8 +1,23 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useQuery } from '@apollo/client/react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { clearSession, getSessionProfile, redirectToCentralLogin } from './auth/session';
 import ThemeToggle from './components/ThemeToggle';
+import { GET_PROFILE_QUERY } from './graphql/authQueries';
 import './App.css';
+
+interface ProfileQueryData {
+  me?: {
+    success?: boolean;
+    message?: string;
+    data?: {
+      id?: string;
+      name?: string;
+      email?: string;
+      createdAt?: string;
+    };
+  };
+}
 
 const links = [
   { to: '/dashboard', label: 'Dashboard' },
@@ -15,7 +30,17 @@ const links = [
 function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const profile = useMemo(() => getSessionProfile(), []);
+  const sessionProfile = useMemo(() => getSessionProfile(), []);
+  const { data } = useQuery<ProfileQueryData>(GET_PROFILE_QUERY, { fetchPolicy: 'cache-first' });
+
+  const profileName = (data?.me?.data?.name as string | undefined)?.trim() || sessionProfile.displayName;
+  const profileEmail = (data?.me?.data?.email as string | undefined) || sessionProfile.email;
+  const profileInitials = profileName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part: string) => part[0]?.toUpperCase())
+    .join('') || sessionProfile.initials;
 
   useEffect(() => {
     if (!menuOpen) {
@@ -46,25 +71,8 @@ function App() {
             <h2>Portfolio Ops</h2>
             <p className="brand-copy">Applications, funnel progression, analytics, and recruiter email coordination.</p>
           </div>
-          <nav>
-            {links.map((link) => (
-              <NavLink
-                key={link.to}
-                to={link.to}
-                className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-              >
-                {link.label}
-              </NavLink>
-            ))}
-          </nav>
-        </aside>
-        <main className="content-area">
-          <div className="content-topbar">
-            <div className="topbar-status">
-              <span className="status-dot" aria-hidden="true" />
-              Ready to connect through API Gateway
-            </div>
 
+          <div className="sidebar-user-slot">
             <div className="user-menu" ref={menuRef}>
               <button
                 type="button"
@@ -74,12 +82,12 @@ function App() {
                 aria-haspopup="menu"
               >
                 <span className="user-avatar" aria-hidden="true">
-                  {profile.initials}
+                  {profileInitials}
                 </span>
 
                 <span className="user-meta">
-                  <strong>{profile.displayName}</strong>
-                  <small>{profile.email ?? 'Signed in'}</small>
+                  <strong>{profileName}</strong>
+                  <small>{profileEmail ?? 'Signed in'}</small>
                 </span>
 
                 <span className="user-chevron" aria-hidden="true">
@@ -98,6 +106,9 @@ function App() {
                   <button type="button" role="menuitem" className="user-menu-item" onClick={() => setMenuOpen(false)}>
                     API Integrations
                   </button>
+                  <button type="button" role="menuitem" className="user-menu-item" onClick={() => setMenuOpen(false)}>
+                    Billing & Plan
+                  </button>
                   <hr className="user-menu-separator" />
                   <button type="button" role="menuitem" className="user-menu-item danger" onClick={handleLogout}>
                     Log Out
@@ -106,6 +117,20 @@ function App() {
               )}
             </div>
           </div>
+
+          <nav>
+            {links.map((link) => (
+              <NavLink
+                key={link.to}
+                to={link.to}
+                className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+              >
+                {link.label}
+              </NavLink>
+            ))}
+          </nav>
+        </aside>
+        <main className="content-area">
           <Outlet />
         </main>
       </div>
