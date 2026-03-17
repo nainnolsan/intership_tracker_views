@@ -589,7 +589,7 @@ textarea:focus {
   inset: 0;
   background: rgba(15, 23, 42, 0.4);
   display: grid;
-  place-items: start center;
+  place-items: center;
   padding: 1rem;
   overflow-y: auto;
 }
@@ -618,8 +618,8 @@ textarea:focus {
 }
 
 .modal-close-icon {
-  width: 22px;
-  height: 22px;
+  width: 30px;
+  height: 30px;
   border-radius: 0;
   padding: 0;
   display: inline-flex;
@@ -645,8 +645,8 @@ textarea:focus {
 }
 
 .close-icon-svg {
-  width: 14px;
-  height: 14px;
+  width: 20px;
+  height: 20px;
   stroke: var(--ink);
   stroke-width: 1.8;
   fill: none;
