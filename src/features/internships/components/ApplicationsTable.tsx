@@ -6,6 +6,16 @@ interface ApplicationsTableProps {
   onEdit: (application: ApplicationDTO) => void;
 }
 
+const formatDisplayDate = (value: string): string => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat('en-GB', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  }).format(date);
+};
+
 export default function ApplicationsTable({ rows, onEdit }: ApplicationsTableProps) {
   return (
     <div className="panel">
@@ -29,10 +39,10 @@ export default function ApplicationsTable({ rows, onEdit }: ApplicationsTablePro
               <td>
                 <span className={stageClassName[row.stage]}>{stageLabels[row.stage]}</span>
               </td>
-              <td>{row.appliedAt}</td>
+              <td>{formatDisplayDate(row.appliedAt)}</td>
               <td>
-                <button type="button" className="btn btn-ghost" onClick={() => onEdit(row)}>
-                  Edit
+                <button type="button" className="btn btn-ghost icon-btn" onClick={() => onEdit(row)} aria-label="Open application actions">
+                  &#8942;
                 </button>
               </td>
             </tr>

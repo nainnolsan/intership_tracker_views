@@ -28,6 +28,16 @@ const toDateInput = (value?: string): string => {
   return value.includes('T') ? value.split('T')[0] : value;
 };
 
+const formatDisplayDate = (value: string): string => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat('en-GB', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  }).format(date);
+};
+
 export default function ApplicationFormModal({
   initialData,
   timeline = [],
@@ -211,9 +221,9 @@ export default function ApplicationFormModal({
     <div className="modal-backdrop" role="dialog" aria-modal="true">
       <div className="modal">
         <div className="modal-head">
-          <h2>{title}</h2>
-          <button type="button" className="btn btn-ghost" onClick={onClose}>
-            Close
+          {!initialData && <h2>{title}</h2>}
+          <button type="button" className="btn btn-ghost modal-close-icon" onClick={onClose} aria-label="Close modal">
+            &times;
           </button>
         </div>
 
@@ -387,7 +397,7 @@ export default function ApplicationFormModal({
                           ) : (
                             <>
                               <strong>{event.toStage}</strong>
-                              <span>{new Date(event.eventDate).toLocaleDateString()}</span>
+                              <span>{formatDisplayDate(event.eventDate)}</span>
                               {event.notes && <p>{event.notes}</p>}
                               <div className="pipeline-row-actions full-row">
                                 <button type="button" className="btn btn-ghost" onClick={() => startEditEvent(event)}>
