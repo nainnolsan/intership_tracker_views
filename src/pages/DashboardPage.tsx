@@ -1,82 +1,105 @@
-import { useMemo, useState } from 'react';
-import type { CSSProperties } from 'react';
+import { useState } from 'react';
 import MetricCard from '../features/internships/components/MetricCard';
 import PageHeader from '../features/internships/components/PageHeader';
 import SankeyFunnel from '../features/internships/components/SankeyFunnel';
 import { useDashboardMetrics, useFunnelFlow } from '../features/internships/hooks/useInternshipsData';
 
-const DASHBOARD_ACCENT_STORAGE_KEY = 'dashboardAccentColor';
-const ACCENT_PRESETS = ['#22c55e', '#3b82f6', '#f97316', '#e11d48'];
+const DASHBOARD_METRIC_COLORS_STORAGE_KEY = 'dashboardMetricColors';
 
-const readStoredAccent = (): string => {
+type MetricKey = 'applied' | 'oa' | 'interviews' | 'offers' | 'rejected' | 'conversion';
+
+const DEFAULT_METRIC_COLORS: Record<MetricKey, string> = {
+  applied: '#1e3a8a',
+  oa: '#0f766e',
+  interviews: '#6d28d9',
+  offers: '#166534',
+  rejected: '#991b1b',
+  conversion: '#9f1239',
+};
+
+const readStoredMetricColors = (): Record<MetricKey, string> => {
   if (typeof window === 'undefined') {
-    return ACCENT_PRESETS[0];
+    return DEFAULT_METRIC_COLORS;
   }
 
-  const stored = localStorage.getItem(DASHBOARD_ACCENT_STORAGE_KEY);
-  return stored || ACCENT_PRESETS[0];
+  const stored = localStorage.getItem(DASHBOARD_METRIC_COLORS_STORAGE_KEY);
+  if (!stored) {
+    return DEFAULT_METRIC_COLORS;
+  }
+
+  try {
+    const parsed = JSON.parse(stored) as Partial<Record<MetricKey, string>>;
+    return {
+      ...DEFAULT_METRIC_COLORS,
+      ...parsed,
+    };
+  } catch {
+    return DEFAULT_METRIC_COLORS;
+  }
 };
 
 export default function DashboardPage() {
-  const [accentColor, setAccentColor] = useState<string>(readStoredAccent);
+  const [metricColors, setMetricColors] = useState<Record<MetricKey, string>>(readStoredMetricColors);
   const metricsQuery = useDashboardMetrics();
   const funnelQuery = useFunnelFlow();
 
   const metrics = metricsQuery.data;
-  const viewStyle = useMemo(
-    () => ({ '--dashboard-accent': accentColor } as CSSProperties),
-    [accentColor],
-  );
 
-  const updateAccentColor = (value: string) => {
-    setAccentColor(value);
-    localStorage.setItem(DASHBOARD_ACCENT_STORAGE_KEY, value);
+  const updateMetricColor = (key: MetricKey, value: string) => {
+    setMetricColors((previous) => {
+      const next = {
+        ...previous,
+        [key]: value,
+      };
+      localStorage.setItem(DASHBOARD_METRIC_COLORS_STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
   };
 
   return (
-    <section className="view dashboard-view" style={viewStyle}>
+    <section className="view dashboard-view">
       <PageHeader
         title="Dashboard"
         subtitle="Track your internship and job pipeline performance in one place."
-        action={
-          <details className="color-menu">
-            <summary className="btn btn-ghost color-menu-trigger" aria-label="Customize dashboard color">
-              <span className="color-menu-dots" aria-hidden="true">...</span>
-            </summary>
-            <div className="color-menu-popover">
-              <p>Accent Color</p>
-              <div className="color-preset-row">
-                {ACCENT_PRESETS.map((preset) => (
-                  <button
-                    key={preset}
-                    type="button"
-                    className={`color-swatch ${accentColor.toLowerCase() === preset ? 'active' : ''}`}
-                    style={{ backgroundColor: preset }}
-                    onClick={() => updateAccentColor(preset)}
-                    aria-label={`Select color ${preset}`}
-                  />
-                ))}
-              </div>
-              <label className="color-picker-label">
-                Custom
-                <input
-                  type="color"
-                  value={accentColor}
-                  onChange={(event) => updateAccentColor(event.target.value)}
-                />
-              </label>
-            </div>
-          </details>
-        }
       />
 
       <div className="metric-grid">
-        <MetricCard label="Total Applied" value={metrics?.totalApplied ?? '-'} />
-        <MetricCard label="OA" value={metrics?.totalOnlineAssessments ?? '-'} tone="accent" />
-        <MetricCard label="Interviews" value={metrics?.totalInterviews ?? '-'} tone="accent" />
-        <MetricCard label="Offers" value={metrics?.totalOffers ?? '-'} tone="success" />
-        <MetricCard label="Rejected" value={metrics?.totalRejected ?? '-'} tone="danger" />
-        <MetricCard label="Conversion Rate" value={metrics ? `${metrics.conversionRate.toFixed(2)}%` : '-'} tone="neutral" />
+        <MetricCard
+          label="Total Applied"
+          value={metrics?.totalApplied ?? '-'}
+          color={metricColors.applied}
+          onColorChange={(color) => updateMetricColor('applied', color)}
+        />
+        <MetricCard
+          label="OA"
+          value={metrics?.totalOnlineAssessments ?? '-'}
+          color={metricColors.oa}
+          onColorChange={(color) => updateMetricColor('oa', color)}
+        />
+        <MetricCard
+          label="Interviews"
+          value={metrics?.totalInterviews ?? '-'}
+          color={metricColors.interviews}
+          onColorChange={(color) => updateMetricColor('interviews', color)}
+        />
+        <MetricCard
+          label="Offers"
+          value={metrics?.totalOffers ?? '-'}
+          color={metricColors.offers}
+          onColorChange={(color) => updateMetricColor('offers', color)}
+        />
+        <MetricCard
+          label="Rejected"
+          value={metrics?.totalRejected ?? '-'}
+          color={metricColors.rejected}
+          onColorChange={(color) => updateMetricColor('rejected', color)}
+        />
+        <MetricCard
+          label="Conversion Rate"
+          value={metrics ? `${metrics.conversionRate.toFixed(2)}%` : '-'}
+          color={metricColors.conversion}
+          onColorChange={(color) => updateMetricColor('conversion', color)}
+        />
       </div>
 
       <p className="dashboard-helper-note">OA means Online Assessment.</p>

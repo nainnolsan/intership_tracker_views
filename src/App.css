@@ -235,6 +235,7 @@
   border: 1px solid var(--line);
   background: var(--paper);
   padding: 1rem;
+  position: relative;
 }
 
 .metric-label {
@@ -249,68 +250,40 @@
   color: var(--ink);
 }
 
-.tone-accent {
-  border-color: color-mix(in srgb, var(--dashboard-accent) 55%, var(--line));
-  background: color-mix(in srgb, var(--dashboard-accent) 12%, var(--paper));
+.metric-card-solid {
+  border-color: color-mix(in srgb, var(--metric-solid-bg) 65%, var(--line));
+  background: var(--metric-solid-bg);
 }
 
-.tone-success {
-  border-color: color-mix(in srgb, #16a34a 60%, var(--line));
-  background: color-mix(in srgb, #16a34a 10%, var(--paper));
+.metric-card-solid .metric-label,
+.metric-card-solid .metric-value {
+  color: var(--metric-solid-ink);
 }
 
-.tone-danger {
-  border-color: color-mix(in srgb, #dc2626 60%, var(--line));
-  background: color-mix(in srgb, #dc2626 10%, var(--paper));
-}
-
-.tone-neutral {
-  border-color: color-mix(in srgb, var(--dashboard-accent) 35%, var(--line));
-  background: color-mix(in srgb, var(--dashboard-accent) 8%, var(--paper));
-}
-
-.tone-accent .metric-value,
-.tone-neutral .metric-value {
-  color: var(--dashboard-accent);
-}
-
-.tone-success .metric-value {
-  color: #16a34a;
-}
-
-.tone-danger .metric-value {
-  color: #dc2626;
-}
-
-.dashboard-helper-note {
-  color: var(--muted);
-  font-size: 0.9rem;
-}
-
-.color-menu {
-  position: relative;
-}
-
-.color-menu[open] .color-menu-trigger {
-  border-color: color-mix(in srgb, var(--dashboard-accent) 60%, var(--line));
-}
-
-.color-menu-trigger {
-  min-width: 42px;
-  padding: 0.35rem 0.6rem;
-  line-height: 1;
-}
-
-.color-menu-dots {
-  font-size: 1.15rem;
-  letter-spacing: 0.06em;
-}
-
-.color-menu-popover {
+.metric-color-menu {
   position: absolute;
-  top: calc(100% + 0.5rem);
+  top: 0.45rem;
+  right: 0.45rem;
+}
+
+.metric-color-trigger {
+  border: 1px solid color-mix(in srgb, var(--metric-solid-ink) 35%, transparent);
+  background: color-mix(in srgb, var(--metric-solid-ink) 14%, transparent);
+  color: var(--metric-solid-ink);
+  border-radius: 9px;
+  min-width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.metric-color-popover {
+  position: absolute;
+  top: calc(100% + 0.45rem);
   right: 0;
-  min-width: 220px;
+  min-width: 210px;
   border: 1px solid var(--line);
   border-radius: 12px;
   background: var(--paper);
@@ -318,12 +291,17 @@
   padding: 0.75rem;
   display: grid;
   gap: 0.6rem;
-  z-index: 10;
+  z-index: 12;
 }
 
-.color-menu-popover p {
+.metric-color-popover p {
   color: var(--muted);
   font-size: 0.82rem;
+}
+
+.dashboard-helper-note {
+  color: var(--muted);
+  font-size: 0.9rem;
 }
 
 .color-preset-row {
@@ -778,9 +756,9 @@ textarea:focus {
     min-height: auto;
   }
 
-  .color-menu-popover {
+  .metric-color-popover {
     right: auto;
-    left: 0;
+    left: -0.45rem;
   }
 
   .sidebar nav {
