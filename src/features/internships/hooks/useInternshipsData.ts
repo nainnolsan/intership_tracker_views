@@ -11,6 +11,9 @@ import {
 import {
   ADD_INTERNSHIP_STAGE_EVENT,
   CREATE_INTERNSHIP_APPLICATION,
+  DELETE_INTERNSHIP_APPLICATION,
+  DELETE_INTERNSHIP_STAGE_EVENT,
+  UPDATE_INTERNSHIP_STAGE_EVENT,
   UPDATE_INTERNSHIP_APPLICATION,
   CONNECT_EMAIL_PROVIDER,
 } from '../../../graphql/internshipMutations';
@@ -20,6 +23,7 @@ import type {
   ApplicationStage,
   AnalyticsOverviewDTO,
   ApplicationJourneyDTO,
+  ActionResponseDTO,
   CreateApplicationDTO,
   DashboardMetricsDTO,
   EmailCenterDTO,
@@ -28,6 +32,7 @@ import type {
   PipelineColumnDTO,
   RoleType,
   UpdateApplicationDTO,
+  UpdateStageEventDTO,
 } from '../../../types/internships';
 
 // ── GraphQL response shapes ──────────────────────────────────────────────────
@@ -41,6 +46,9 @@ interface ApplicationJourneyResponse { internshipApplicationJourney: Application
 interface ApplicationMutationResponse { createInternshipApplication: ApplicationDTO }
 interface UpdateMutationResponse      { updateInternshipApplication: ApplicationDTO }
 interface AddStageEventResponse       { addInternshipStageEvent: { id: string } }
+interface UpdateStageEventResponse    { updateInternshipStageEvent: { id: string } }
+interface DeleteStageEventResponse    { deleteInternshipStageEvent: ActionResponseDTO }
+interface DeleteApplicationResponse   { deleteInternshipApplication: ActionResponseDTO }
 interface ConnectProviderResponse     { connectInternshipEmailProvider: { redirectUrl: string } }
 
 interface ApplicationsVariables    { filters?: Partial<{ stage: ApplicationStage; company: string; roleType: RoleType; fromDate: string; toDate: string; q: string }> }
@@ -49,6 +57,9 @@ interface UpdateApplicationVariables { id: string; input: UpdateApplicationDTO }
 interface ConnectProviderVariables   { provider: 'gmail' | 'outlook' }
 interface ApplicationJourneyVariables { id: string }
 interface AddStageEventVariables      { id: string; input: AddStageEventDTO }
+interface UpdateStageEventVariables   { id: string; eventId: string; input: UpdateStageEventDTO }
+interface DeleteStageEventVariables   { id: string; eventId: string }
+interface DeleteApplicationVariables  { id: string }
 
 // ── Refetch list after mutations ─────────────────────────────────────────────
 const refetchQueries = [
@@ -140,6 +151,35 @@ export function useAddStageEvent() {
   );
   const mutateAsync = ({ id, payload }: { id: string; payload: AddStageEventDTO }) =>
     execute({ variables: { id, input: payload } });
+  return { ...result, mutateAsync };
+}
+
+export function useUpdateStageEvent() {
+  const [execute, result] = useMutation<UpdateStageEventResponse, UpdateStageEventVariables>(
+    UPDATE_INTERNSHIP_STAGE_EVENT,
+    { refetchQueries },
+  );
+  const mutateAsync = ({ id, eventId, payload }: { id: string; eventId: string; payload: UpdateStageEventDTO }) =>
+    execute({ variables: { id, eventId, input: payload } });
+  return { ...result, mutateAsync };
+}
+
+export function useDeleteStageEvent() {
+  const [execute, result] = useMutation<DeleteStageEventResponse, DeleteStageEventVariables>(
+    DELETE_INTERNSHIP_STAGE_EVENT,
+    { refetchQueries },
+  );
+  const mutateAsync = ({ id, eventId }: { id: string; eventId: string }) =>
+    execute({ variables: { id, eventId } });
+  return { ...result, mutateAsync };
+}
+
+export function useDeleteApplication() {
+  const [execute, result] = useMutation<DeleteApplicationResponse, DeleteApplicationVariables>(
+    DELETE_INTERNSHIP_APPLICATION,
+    { refetchQueries },
+  );
+  const mutateAsync = (id: string) => execute({ variables: { id } });
   return { ...result, mutateAsync };
 }
 

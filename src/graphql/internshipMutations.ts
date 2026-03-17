@@ -50,6 +50,36 @@ export const ADD_INTERNSHIP_STAGE_EVENT = gql`
   }
 `;
 
+export const UPDATE_INTERNSHIP_STAGE_EVENT = gql`
+  mutation UpdateInternshipStageEvent($id: ID!, $eventId: ID!, $input: AddInternshipStageEventInput!) {
+    updateInternshipStageEvent(id: $id, eventId: $eventId, input: $input) {
+      id
+      fromStage
+      toStage
+      eventDate
+      notes
+    }
+  }
+`;
+
+export const DELETE_INTERNSHIP_STAGE_EVENT = gql`
+  mutation DeleteInternshipStageEvent($id: ID!, $eventId: ID!) {
+    deleteInternshipStageEvent(id: $id, eventId: $eventId) {
+      success
+      message
+    }
+  }
+`;
+
+export const DELETE_INTERNSHIP_APPLICATION = gql`
+  mutation DeleteInternshipApplication($id: ID!) {
+    deleteInternshipApplication(id: $id) {
+      success
+      message
+    }
+  }
+`;
+
 export const CONNECT_EMAIL_PROVIDER = gql`
   mutation ConnectEmailProvider($provider: EmailProvider!) {
     connectInternshipEmailProvider(provider: $provider) {

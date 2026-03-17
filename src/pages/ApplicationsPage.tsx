@@ -7,6 +7,9 @@ import {
   useApplicationJourney,
   useApplications,
   useCreateApplication,
+  useDeleteApplication,
+  useDeleteStageEvent,
+  useUpdateStageEvent,
   useUpdateApplication,
 } from '../features/internships/hooks/useInternshipsData';
 import { applicationStages, roleTypes } from '../types/internships';
@@ -29,6 +32,9 @@ export default function ApplicationsPage() {
   const createApplication = useCreateApplication();
   const updateApplication = useUpdateApplication();
   const addStageEvent = useAddStageEvent();
+  const updateStageEvent = useUpdateStageEvent();
+  const deleteStageEvent = useDeleteStageEvent();
+  const deleteApplication = useDeleteApplication();
   const journeyQuery = useApplicationJourney(modalState.editing?.id);
 
   const rows = useMemo(() => applicationsQuery.data ?? [], [applicationsQuery.data]);
@@ -117,6 +123,31 @@ export default function ApplicationsPage() {
             modalState.editing
               ? async (payload) => {
                   await addStageEvent.mutateAsync({ id: modalState.editing!.id, payload });
+                  await journeyQuery.refetch();
+                }
+              : undefined
+          }
+          onPipelineEventUpdate={
+            modalState.editing
+              ? async (eventId, payload) => {
+                  await updateStageEvent.mutateAsync({ id: modalState.editing!.id, eventId, payload });
+                  await journeyQuery.refetch();
+                }
+              : undefined
+          }
+          onPipelineEventDelete={
+            modalState.editing
+              ? async (eventId) => {
+                  await deleteStageEvent.mutateAsync({ id: modalState.editing!.id, eventId });
+                  await journeyQuery.refetch();
+                }
+              : undefined
+          }
+          onDeleteApplication={
+            modalState.editing
+              ? async () => {
+                  await deleteApplication.mutateAsync(modalState.editing!.id);
+                  setModalState({ open: false });
                 }
               : undefined
           }

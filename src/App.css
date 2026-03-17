@@ -669,6 +669,78 @@ textarea:focus {
   font-size: 0.85rem;
 }
 
+.edit-shell {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 1rem;
+  min-height: 420px;
+}
+
+.edit-nav {
+  border-right: 1px solid var(--line);
+  padding-right: 0.8rem;
+  display: grid;
+  align-content: start;
+  gap: 0.45rem;
+}
+
+.edit-nav-item {
+  text-align: left;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: 10px;
+  padding: 0.6rem 0.7rem;
+  font: inherit;
+  cursor: pointer;
+}
+
+.edit-nav-item.active {
+  background: color-mix(in srgb, var(--brand-soft) 65%, var(--paper));
+  border-color: color-mix(in srgb, var(--dashboard-accent) 45%, var(--line));
+}
+
+.edit-nav-item.danger {
+  color: color-mix(in srgb, var(--ink) 78%, #be123c);
+}
+
+.edit-panel {
+  min-width: 0;
+}
+
+.edit-section-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.pipeline-row-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.45rem;
+}
+
+.pipeline-edit-row {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.danger-panel {
+  border: 1px solid color-mix(in srgb, #be123c 25%, var(--line));
+  background: color-mix(in srgb, #be123c 8%, var(--paper));
+  border-radius: 10px;
+  padding: 0.85rem;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.danger-panel h3 {
+  color: color-mix(in srgb, var(--ink) 78%, #be123c);
+}
+
 .empty-state {
   color: var(--muted);
   margin-top: 0.8rem;
@@ -730,6 +802,18 @@ textarea:focus {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .edit-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .edit-nav {
+    border-right: 0;
+    padding-right: 0;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid var(--line);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .funnel-stage-item i {
     display: none;
   }
@@ -765,6 +849,12 @@ textarea:focus {
   .analytics-grid,
   .email-connectors,
   .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .edit-section-grid,
+  .pipeline-edit-row,
+  .edit-nav {
     grid-template-columns: 1fr;
   }
 

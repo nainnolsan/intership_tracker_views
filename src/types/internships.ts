@@ -86,6 +86,17 @@ export interface AddStageEventDTO {
   notes?: string;
 }
 
+export interface UpdateStageEventDTO {
+  toStage?: ApplicationStage;
+  eventDate?: string;
+  notes?: string;
+}
+
+export interface ActionResponseDTO {
+  success: boolean;
+  message: string;
+}
+
 export interface PipelineColumnDTO {
   stage: ApplicationStage;
   total: number;
