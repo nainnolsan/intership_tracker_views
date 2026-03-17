@@ -1,26 +1,80 @@
 import { ResponsiveContainer, Sankey, Tooltip } from 'recharts';
 import type { FunnelFlowDTO } from '../../../types/internships';
 
-interface SankeyFunnelProps {
-  data: FunnelFlowDTO;
+interface StageTotals {
+  Applied: number;
+  OnlineAssessment: number;
+  Interview: number;
+  Offer: number;
+  Rejected: number;
 }
 
-export default function SankeyFunnel({ data }: SankeyFunnelProps) {
+interface SankeyFunnelProps {
+  data: FunnelFlowDTO;
+  stageTotals: StageTotals;
+}
+
+const toReadableStageName = (name: string): string => {
+  const normalized = name.trim().toLowerCase();
+
+  if (normalized === 'oa' || normalized === 'onlineassessment' || normalized === 'online_assessment') {
+    return 'OnlineAssessment';
+  }
+
+  if (normalized === 'applied') return 'Applied';
+  if (normalized === 'interview') return 'Interview';
+  if (normalized === 'offer') return 'Offer';
+  if (normalized === 'rejected') return 'Rejected';
+
+  return name;
+};
+
+export default function SankeyFunnel({ data, stageTotals }: SankeyFunnelProps) {
+  const hasLinks = data.links.some((link) => link.value > 0);
+  const normalizedData: FunnelFlowDTO = {
+    ...data,
+    nodes: data.nodes.map((node) => ({ name: toReadableStageName(node.name) })),
+  };
+
+  const fallbackStages = [
+    { key: 'Applied', label: 'Applied', value: stageTotals.Applied },
+    { key: 'OnlineAssessment', label: 'OA', value: stageTotals.OnlineAssessment },
+    { key: 'Interview', label: 'Interview', value: stageTotals.Interview },
+    { key: 'Offer', label: 'Offer', value: stageTotals.Offer },
+    { key: 'Rejected', label: 'Rejected', value: stageTotals.Rejected },
+  ];
+
   return (
     <div className="panel card-sankey">
       <h2>Funnel Flow</h2>
       <p className="panel-description">Applied to OA to Interview to Offer/Rejected</p>
       <div className="sankey-wrapper">
-        <ResponsiveContainer width="100%" height={340}>
-          <Sankey
-            data={data}
-            nodePadding={40}
-            margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
-            link={{ stroke: 'var(--chart-2)' }}
-          >
-            <Tooltip />
-          </Sankey>
-        </ResponsiveContainer>
+        {hasLinks ? (
+          <ResponsiveContainer width="100%" height={340}>
+            <Sankey
+              data={normalizedData}
+              nodePadding={40}
+              margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
+              link={{ stroke: 'var(--dashboard-accent, var(--chart-2))' }}
+            >
+              <Tooltip />
+            </Sankey>
+          </ResponsiveContainer>
+        ) : (
+          <div className="funnel-stage-fallback">
+            {fallbackStages.map((stage, index) => (
+              <div key={stage.key} className="funnel-stage-item">
+                <strong>{stage.label}</strong>
+                <span>{stage.value}</span>
+                {index < fallbackStages.length - 1 && <i aria-hidden="true">-&gt;</i>}
+              </div>
+            ))}
+            <p className="funnel-fallback-note">
+              Your data is still too early for transition links. As you move applications between stages,
+              the flow chart will appear automatically.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
