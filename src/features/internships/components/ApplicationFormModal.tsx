@@ -72,6 +72,13 @@ export default function ApplicationFormModal({
   const [actionLoading, setActionLoading] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
+  const sectionMeta: Record<EditSection, { label: string; icon: string; danger?: boolean }> = {
+    'stage-update': { label: 'Stage Update', icon: '◷' },
+    'application-info': { label: 'Application Info', icon: '◫' },
+    pipeline: { label: 'Pipeline', icon: '◎' },
+    'danger-zone': { label: 'Delete Application', icon: '◉', danger: true },
+  };
+
   const orderedTimeline = useMemo(
     () => [...timeline].sort((a, b) => new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime()),
     [timeline],
@@ -219,13 +226,23 @@ export default function ApplicationFormModal({
 
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true">
-      <div className="modal">
-        <div className="modal-head">
-          {!initialData && <h2>{title}</h2>}
+      <div className={`modal ${initialData ? 'modal-edit' : ''}`}>
+        {initialData ? (
           <button type="button" className="btn btn-ghost modal-close-icon" onClick={onClose} aria-label="Close modal">
-            &times;
+            <svg viewBox="0 0 24 24" aria-hidden="true" className="close-icon-svg">
+              <path d="M6 6L18 18M18 6L6 18" />
+            </svg>
           </button>
-        </div>
+        ) : (
+          <div className="modal-head">
+            <h2>{title}</h2>
+            <button type="button" className="btn btn-ghost modal-close-icon" onClick={onClose} aria-label="Close modal">
+              <svg viewBox="0 0 24 24" aria-hidden="true" className="close-icon-svg">
+                <path d="M6 6L18 18M18 6L6 18" />
+              </svg>
+            </button>
+          </div>
+        )}
 
         {!initialData ? (
           renderCreateForm()
@@ -237,28 +254,32 @@ export default function ApplicationFormModal({
                 className={`edit-nav-item ${activeSection === 'stage-update' ? 'active' : ''}`}
                 onClick={() => setActiveSection('stage-update')}
               >
-                Stage Update
+                <span className="edit-nav-icon" aria-hidden="true">{sectionMeta['stage-update'].icon}</span>
+                <span>{sectionMeta['stage-update'].label}</span>
               </button>
               <button
                 type="button"
                 className={`edit-nav-item ${activeSection === 'application-info' ? 'active' : ''}`}
                 onClick={() => setActiveSection('application-info')}
               >
-                Application Info
+                <span className="edit-nav-icon" aria-hidden="true">{sectionMeta['application-info'].icon}</span>
+                <span>{sectionMeta['application-info'].label}</span>
               </button>
               <button
                 type="button"
                 className={`edit-nav-item ${activeSection === 'pipeline' ? 'active' : ''}`}
                 onClick={() => setActiveSection('pipeline')}
               >
-                Pipeline
+                <span className="edit-nav-icon" aria-hidden="true">{sectionMeta.pipeline.icon}</span>
+                <span>{sectionMeta.pipeline.label}</span>
               </button>
               <button
                 type="button"
                 className={`edit-nav-item danger ${activeSection === 'danger-zone' ? 'active' : ''}`}
                 onClick={() => setActiveSection('danger-zone')}
               >
-                Delete Application
+                <span className="edit-nav-icon" aria-hidden="true">{sectionMeta['danger-zone'].icon}</span>
+                <span>{sectionMeta['danger-zone'].label}</span>
               </button>
             </aside>
 
