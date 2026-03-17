@@ -339,60 +339,40 @@
   padding: 0;
 }
 
-.funnel-stage-fallback {
+.funnel-flow-fallback {
   min-height: 340px;
   border: 1px dashed color-mix(in srgb, var(--dashboard-accent) 45%, var(--line));
   border-radius: 12px;
   padding: 1rem;
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0.6rem;
+  justify-content: center;
+  gap: 1rem;
 }
 
-.funnel-progress-track {
+.funnel-svg {
+  width: 100%;
+  max-width: 600px;
+  height: auto;
+}
+
+.funnel-stage-text {
+  fill: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.funnel-stage-value {
+  fill: var(--dashboard-accent, var(--chart-2));
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.funnel-fallback-note {
   grid-column: 1 / -1;
-  display: flex;
-  align-items: center;
-  margin-bottom: 0.15rem;
-}
-
-.funnel-progress-part {
-  display: flex;
-  align-items: center;
-  flex: 1;
-}
-
-.funnel-progress-node {
-  width: 12px;
-  height: 12px;
-  border-radius: 999px;
-  border: 2px solid color-mix(in srgb, var(--dashboard-accent) 45%, var(--line));
-  background: transparent;
-  flex-shrink: 0;
-}
-
-.funnel-progress-node.reached {
-  border-color: var(--dashboard-accent);
-  background: var(--dashboard-accent);
-}
-
-.funnel-progress-segment {
-  height: 2px;
-  flex: 1;
-  margin: 0 0.38rem;
-}
-
-.funnel-progress-segment.reached {
-  background: var(--dashboard-accent);
-}
-
-.funnel-progress-segment.future {
-  background: repeating-linear-gradient(
-    to right,
-    color-mix(in srgb, var(--dashboard-accent) 70%, var(--muted)) 0 8px,
-    transparent 8px 14px
-  );
+  color: var(--muted);
+  font-size: 0.9rem;
 }
 
 .funnel-stage-item {
@@ -754,12 +734,12 @@ textarea:focus {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .funnel-stage-fallback {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .funnel-flow-fallback {
+    min-height: 300px;
   }
 
-  .funnel-progress-track {
-    margin-bottom: 0.35rem;
+  .funnel-svg {
+    max-width: 100%;
   }
 
   .funnel-stage-item i {
@@ -800,13 +780,16 @@ textarea:focus {
     grid-template-columns: 1fr;
   }
 
-  .funnel-stage-fallback {
-    grid-template-columns: 1fr;
-    min-height: auto;
+  .funnel-flow-fallback {
+    min-height: 250px;
   }
 
-  .funnel-progress-track {
-    display: none;
+  .funnel-stage-text {
+    font-size: 11px;
+  }
+
+  .funnel-stage-value {
+    font-size: 14px;
   }
 
   .metric-color-popover {

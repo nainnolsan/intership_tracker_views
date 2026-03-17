@@ -44,12 +44,8 @@ export default function SankeyFunnel({ data, stageTotals }: SankeyFunnelProps) {
     { key: 'Rejected', label: 'Rejected', value: stageTotals.Rejected },
   ];
 
-  const lastReachedIndex = Math.max(
-    0,
-    fallbackStages.reduce((last, stage, index) => (stage.value > 0 ? index : last), -1),
-  );
   const hasAnyProgress = fallbackStages.some((stage) => stage.value > 0);
-  const reachedSegments = hasAnyProgress ? Math.max(1, lastReachedIndex) : 0;
+  const maxStageValue = Math.max(...fallbackStages.map((s) => s.value), 1);
 
   return (
     <div className="panel card-sankey">
@@ -68,29 +64,58 @@ export default function SankeyFunnel({ data, stageTotals }: SankeyFunnelProps) {
             </Sankey>
           </ResponsiveContainer>
         ) : (
-          <div className="funnel-stage-fallback">
-            <div className="funnel-progress-track" aria-hidden="true">
-              {fallbackStages.map((stage, index) => (
-                <div key={`progress-${stage.key}`} className="funnel-progress-part">
-                  <span className={`funnel-progress-node ${index <= lastReachedIndex ? 'reached' : 'future'}`} />
-                  {index < fallbackStages.length - 1 && (
-                    <span
-                      className={`funnel-progress-segment ${index < reachedSegments ? 'reached' : 'future'}`}
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
+          <div className="funnel-flow-fallback">
+            <svg width="100%" viewBox="0 0 600 320" preserveAspectRatio="xMidYMid meet" className="funnel-svg">
+              {fallbackStages.map((stage, index) => {
+                const hasValue = stage.value > 0;
+                const widthPercent = hasValue ? (stage.value / maxStageValue) * 95 : 0;
+                const yOffset = index * 60 + 20;
+                const centerX = 300;
+                const leftX = centerX - (widthPercent * 3);
+                const rightX = centerX + (widthPercent * 3);
 
-            {fallbackStages.map((stage, index) => (
-              <div key={stage.key} className="funnel-stage-item">
-                <strong>{stage.label}</strong>
-                <span>{stage.value}</span>
-                {index < fallbackStages.length - 1 && <i aria-hidden="true">-&gt;</i>}
-              </div>
-            ))}
+                return (
+                  <g key={stage.key}>
+                    {/* Funnel segment */}
+                    {hasValue && (
+                      <>
+                        <polygon
+                          points={`${leftX},${yOffset} ${rightX},${yOffset} ${centerX + (widthPercent * 2.5)},${yOffset + 50} ${centerX - (widthPercent * 2.5)},${yOffset + 50}`}
+                          fill={`var(--dashboard-accent, var(--chart-${index + 1}))`}
+                          opacity="0.15"
+                          stroke={`var(--dashboard-accent, var(--chart-${index + 1}))`}
+                          strokeWidth="2"
+                        />
+                        {/* Stage label */}
+                        <text
+                          x={centerX}
+                          y={yOffset + 28}
+                          textAnchor="middle"
+                          dominantBaseline="middle"
+                          className="funnel-stage-text"
+                        >
+                          {stage.label}
+                        </text>
+                        {/* Stage value */}
+                        <text
+                          x={centerX}
+                          y={yOffset + 40}
+                          textAnchor="middle"
+                          dominantBaseline="middle"
+                          className="funnel-stage-value"
+                        >
+                          {stage.value}
+                        </text>
+                      </>
+                    )}
+                  </g>
+                );
+              })}
+            </svg>
             <p className="funnel-fallback-note">
-              Solid segments show current visible progress. Dotted segments show the next stages you can reach.
+              {hasAnyProgress
+                ? 'Funnel showing current stage distribution. More stages will appear as applications progress.'
+                : 'Your funnel will appear here as applications move through stages.'}
             </p>
           </div>
         )}
