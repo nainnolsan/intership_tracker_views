@@ -350,6 +350,51 @@
   gap: 0.6rem;
 }
 
+.funnel-progress-track {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.15rem;
+}
+
+.funnel-progress-part {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.funnel-progress-node {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  border: 2px solid color-mix(in srgb, var(--dashboard-accent) 45%, var(--line));
+  background: transparent;
+  flex-shrink: 0;
+}
+
+.funnel-progress-node.reached {
+  border-color: var(--dashboard-accent);
+  background: var(--dashboard-accent);
+}
+
+.funnel-progress-segment {
+  height: 2px;
+  flex: 1;
+  margin: 0 0.38rem;
+}
+
+.funnel-progress-segment.reached {
+  background: var(--dashboard-accent);
+}
+
+.funnel-progress-segment.future {
+  background: repeating-linear-gradient(
+    to right,
+    color-mix(in srgb, var(--dashboard-accent) 70%, var(--muted)) 0 8px,
+    transparent 8px 14px
+  );
+}
+
 .funnel-stage-item {
   border: 1px solid color-mix(in srgb, var(--dashboard-accent) 35%, var(--line));
   background: color-mix(in srgb, var(--dashboard-accent) 10%, var(--paper));
@@ -713,6 +758,10 @@ textarea:focus {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .funnel-progress-track {
+    margin-bottom: 0.35rem;
+  }
+
   .funnel-stage-item i {
     display: none;
   }
@@ -754,6 +803,10 @@ textarea:focus {
   .funnel-stage-fallback {
     grid-template-columns: 1fr;
     min-height: auto;
+  }
+
+  .funnel-progress-track {
+    display: none;
   }
 
   .metric-color-popover {

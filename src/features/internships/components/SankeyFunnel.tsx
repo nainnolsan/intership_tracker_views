@@ -44,6 +44,13 @@ export default function SankeyFunnel({ data, stageTotals }: SankeyFunnelProps) {
     { key: 'Rejected', label: 'Rejected', value: stageTotals.Rejected },
   ];
 
+  const lastReachedIndex = Math.max(
+    0,
+    fallbackStages.reduce((last, stage, index) => (stage.value > 0 ? index : last), -1),
+  );
+  const hasAnyProgress = fallbackStages.some((stage) => stage.value > 0);
+  const reachedSegments = hasAnyProgress ? Math.max(1, lastReachedIndex) : 0;
+
   return (
     <div className="panel card-sankey">
       <h2>Funnel Flow</h2>
@@ -62,6 +69,19 @@ export default function SankeyFunnel({ data, stageTotals }: SankeyFunnelProps) {
           </ResponsiveContainer>
         ) : (
           <div className="funnel-stage-fallback">
+            <div className="funnel-progress-track" aria-hidden="true">
+              {fallbackStages.map((stage, index) => (
+                <div key={`progress-${stage.key}`} className="funnel-progress-part">
+                  <span className={`funnel-progress-node ${index <= lastReachedIndex ? 'reached' : 'future'}`} />
+                  {index < fallbackStages.length - 1 && (
+                    <span
+                      className={`funnel-progress-segment ${index < reachedSegments ? 'reached' : 'future'}`}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+
             {fallbackStages.map((stage, index) => (
               <div key={stage.key} className="funnel-stage-item">
                 <strong>{stage.label}</strong>
@@ -70,8 +90,7 @@ export default function SankeyFunnel({ data, stageTotals }: SankeyFunnelProps) {
               </div>
             ))}
             <p className="funnel-fallback-note">
-              Your data is still too early for transition links. As you move applications between stages,
-              the flow chart will appear automatically.
+              Solid segments show current visible progress. Dotted segments show the next stages you can reach.
             </p>
           </div>
         )}
