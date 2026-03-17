@@ -104,18 +104,7 @@ export default function DashboardPage() {
 
       <p className="dashboard-helper-note">OA means Online Assessment.</p>
 
-      {funnelQuery.data && (
-        <SankeyFunnel
-          data={funnelQuery.data}
-          stageTotals={{
-            Applied: metrics?.totalApplied ?? 0,
-            OnlineAssessment: metrics?.totalOnlineAssessments ?? 0,
-            Interview: metrics?.totalInterviews ?? 0,
-            Offer: metrics?.totalOffers ?? 0,
-            Rejected: metrics?.totalRejected ?? 0,
-          }}
-        />
-      )}
+      {funnelQuery.data && <SankeyFunnel data={funnelQuery.data} />}
     </section>
   );
 }
