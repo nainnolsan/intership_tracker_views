@@ -2,7 +2,13 @@ import { useMemo, useState } from 'react';
 import ApplicationsTable from '../features/internships/components/ApplicationsTable';
 import ApplicationFormModal from '../features/internships/components/ApplicationFormModal';
 import PageHeader from '../features/internships/components/PageHeader';
-import { useApplications, useCreateApplication, useUpdateApplication } from '../features/internships/hooks/useInternshipsData';
+import {
+  useAddStageEvent,
+  useApplicationJourney,
+  useApplications,
+  useCreateApplication,
+  useUpdateApplication,
+} from '../features/internships/hooks/useInternshipsData';
 import { applicationStages, roleTypes } from '../types/internships';
 import type { ApplicationDTO, ApplicationFiltersDTO, CreateApplicationDTO } from '../types/internships';
 
@@ -22,12 +28,18 @@ export default function ApplicationsPage() {
   const applicationsQuery = useApplications(filters);
   const createApplication = useCreateApplication();
   const updateApplication = useUpdateApplication();
+  const addStageEvent = useAddStageEvent();
+  const journeyQuery = useApplicationJourney(modalState.editing?.id);
 
   const rows = useMemo(() => applicationsQuery.data ?? [], [applicationsQuery.data]);
 
   const saveApplication = async (payload: CreateApplicationDTO) => {
     if (modalState.editing) {
-      await updateApplication.mutateAsync({ id: modalState.editing.id, payload });
+      const updatePayload: CreateApplicationDTO = {
+        ...payload,
+        stage: modalState.editing.stage,
+      };
+      await updateApplication.mutateAsync({ id: modalState.editing.id, payload: updatePayload });
       return;
     }
 
@@ -97,8 +109,17 @@ export default function ApplicationsPage() {
         <ApplicationFormModal
           title={modalState.editing ? 'Edit application' : 'New application'}
           initialData={modalState.editing}
+          timeline={journeyQuery.data?.stageTimeline}
+          timelineLoading={journeyQuery.loading}
           onClose={() => setModalState({ open: false })}
           onSubmit={saveApplication}
+          onStageChange={
+            modalState.editing
+              ? async (payload) => {
+                  await addStageEvent.mutateAsync({ id: modalState.editing!.id, payload });
+                }
+              : undefined
+          }
         />
       )}
     </section>

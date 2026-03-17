@@ -3,11 +3,13 @@ import {
   GET_DASHBOARD_METRICS,
   GET_FUNNEL_FLOW,
   GET_APPLICATIONS,
+  GET_APPLICATION_JOURNEY,
   GET_PIPELINE,
   GET_ANALYTICS_OVERVIEW,
   GET_EMAIL_CENTER,
 } from '../../../graphql/internshipQueries';
 import {
+  ADD_INTERNSHIP_STAGE_EVENT,
   CREATE_INTERNSHIP_APPLICATION,
   UPDATE_INTERNSHIP_APPLICATION,
   CONNECT_EMAIL_PROVIDER,
@@ -17,10 +19,12 @@ import type {
   ApplicationFiltersDTO,
   ApplicationStage,
   AnalyticsOverviewDTO,
+  ApplicationJourneyDTO,
   CreateApplicationDTO,
   DashboardMetricsDTO,
   EmailCenterDTO,
   FunnelFlowDTO,
+  AddStageEventDTO,
   PipelineColumnDTO,
   RoleType,
   UpdateApplicationDTO,
@@ -33,14 +37,18 @@ interface ApplicationsResponse     { internshipApplications: ApplicationDTO[] }
 interface PipelineResponse         { internshipPipeline: PipelineColumnDTO[] }
 interface AnalyticsResponse        { internshipAnalyticsOverview: AnalyticsOverviewDTO }
 interface EmailCenterResponse      { internshipEmailCenter: EmailCenterDTO }
+interface ApplicationJourneyResponse { internshipApplicationJourney: ApplicationJourneyDTO }
 interface ApplicationMutationResponse { createInternshipApplication: ApplicationDTO }
 interface UpdateMutationResponse      { updateInternshipApplication: ApplicationDTO }
+interface AddStageEventResponse       { addInternshipStageEvent: { id: string } }
 interface ConnectProviderResponse     { connectInternshipEmailProvider: { redirectUrl: string } }
 
 interface ApplicationsVariables    { filters?: Partial<{ stage: ApplicationStage; company: string; roleType: RoleType; fromDate: string; toDate: string; q: string }> }
 interface CreateApplicationVariables { input: CreateApplicationDTO }
 interface UpdateApplicationVariables { id: string; input: UpdateApplicationDTO }
 interface ConnectProviderVariables   { provider: 'gmail' | 'outlook' }
+interface ApplicationJourneyVariables { id: string }
+interface AddStageEventVariables      { id: string; input: AddStageEventDTO }
 
 // ── Refetch list after mutations ─────────────────────────────────────────────
 const refetchQueries = [
@@ -82,6 +90,18 @@ export function usePipelineBoard() {
   return { data: data?.internshipPipeline, loading, error };
 }
 
+export function useApplicationJourney(id?: string) {
+  const { data, loading, error, refetch } = useQuery<ApplicationJourneyResponse, ApplicationJourneyVariables>(
+    GET_APPLICATION_JOURNEY,
+    {
+      variables: { id: id ?? '' },
+      skip: !id,
+    },
+  );
+
+  return { data: data?.internshipApplicationJourney, loading, error, refetch };
+}
+
 export function useAnalyticsOverview() {
   const { data, loading, error } = useQuery<AnalyticsResponse>(GET_ANALYTICS_OVERVIEW);
   return { data: data?.internshipAnalyticsOverview, loading, error };
@@ -109,6 +129,16 @@ export function useUpdateApplication() {
     { refetchQueries },
   );
   const mutateAsync = ({ id, payload }: { id: string; payload: UpdateApplicationDTO }) =>
+    execute({ variables: { id, input: payload } });
+  return { ...result, mutateAsync };
+}
+
+export function useAddStageEvent() {
+  const [execute, result] = useMutation<AddStageEventResponse, AddStageEventVariables>(
+    ADD_INTERNSHIP_STAGE_EVENT,
+    { refetchQueries },
+  );
+  const mutateAsync = ({ id, payload }: { id: string; payload: AddStageEventDTO }) =>
     execute({ variables: { id, input: payload } });
   return { ...result, mutateAsync };
 }

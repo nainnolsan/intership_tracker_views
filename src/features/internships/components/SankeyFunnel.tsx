@@ -27,12 +27,12 @@ export default function SankeyFunnel({ data, stageTotals }: SankeyFunnelProps) {
   // Create nodes: [Total, Applied, OA, Interview, Offer, Rejected]
   const sankeyNodes = [{ name: 'Total Applications' }, ...stages.map((s) => ({ name: s.label }))];
 
-  // Create links from Total to each stage (only if count > 0)
+  // Create links from Total to each stage using real integer counts only.
   const sankeyLinks = stages
     .map((stage, index) => ({
       source: 0, // Total node
       target: index + 1, // Stage node
-      value: stage.count > 0 ? stage.count : 0.1, // Min 0.1 for visibility if count is 0
+      value: stage.count,
     }))
     .filter((link) => link.value > 0);
 

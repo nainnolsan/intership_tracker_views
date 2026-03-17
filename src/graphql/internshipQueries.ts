@@ -64,6 +64,34 @@ export const GET_APPLICATIONS = gql`
   }
 `;
 
+export const GET_APPLICATION_JOURNEY = gql`
+  query GetApplicationJourney($id: ID!) {
+    internshipApplicationJourney(id: $id) {
+      application {
+        id
+        company
+        roleTitle
+        roleType
+        stage
+        appliedAt
+        lastUpdatedAt
+        location
+        source
+        salaryRange
+        notes
+        contactEmail
+      }
+      stageTimeline {
+        id
+        fromStage
+        toStage
+        eventDate
+        notes
+      }
+    }
+  }
+`;
+
 export const GET_PIPELINE = gql`
   query GetPipeline {
     internshipPipeline {

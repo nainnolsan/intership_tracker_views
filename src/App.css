@@ -624,6 +624,47 @@ textarea:focus {
   gap: 0.6rem;
 }
 
+.timeline-box {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.75rem;
+  background: color-mix(in srgb, var(--paper) 88%, var(--brand-soft));
+}
+
+.timeline-box h3 {
+  margin-bottom: 0.45rem;
+  font-size: 0.98rem;
+}
+
+.timeline-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.timeline-list li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.35rem 0.8rem;
+  align-items: center;
+  border-left: 2px solid color-mix(in srgb, var(--dashboard-accent) 65%, var(--line));
+  padding: 0.35rem 0.6rem;
+}
+
+.timeline-list li span {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.timeline-list li p {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
 .empty-state {
   color: var(--muted);
   margin-top: 0.8rem;

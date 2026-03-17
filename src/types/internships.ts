@@ -19,6 +19,19 @@ export interface ApplicationDTO {
   contactEmail?: string;
 }
 
+export interface PipelineEventDTO {
+  id: string;
+  fromStage?: ApplicationStage;
+  toStage: ApplicationStage;
+  eventDate: string;
+  notes?: string;
+}
+
+export interface ApplicationJourneyDTO {
+  application: ApplicationDTO;
+  stageTimeline: PipelineEventDTO[];
+}
+
 export interface DashboardMetricsDTO {
   totalApplied: number;
   totalOnlineAssessments: number;
@@ -66,6 +79,12 @@ export interface CreateApplicationDTO {
 }
 
 export interface UpdateApplicationDTO extends Partial<CreateApplicationDTO> {}
+
+export interface AddStageEventDTO {
+  toStage: ApplicationStage;
+  eventDate?: string;
+  notes?: string;
+}
 
 export interface PipelineColumnDTO {
   stage: ApplicationStage;
