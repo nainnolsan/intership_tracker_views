@@ -14,57 +14,47 @@ interface SankeyFunnelProps {
   stageTotals: StageTotals;
 }
 
-const toReadableStageName = (name: string): string => {
-  const normalized = name.trim().toLowerCase();
-
-  if (normalized === 'oa' || normalized === 'onlineassessment' || normalized === 'online_assessment') {
-    return 'OnlineAssessment';
-  }
-
-  if (normalized === 'applied') return 'Applied';
-  if (normalized === 'interview') return 'Interview';
-  if (normalized === 'offer') return 'Offer';
-  if (normalized === 'rejected') return 'Rejected';
-
-  return name;
-};
-
 export default function SankeyFunnel({ data, stageTotals }: SankeyFunnelProps) {
-  const normalizedData: FunnelFlowDTO = {
-    ...data,
-    nodes: data.nodes.map((node) => ({ name: toReadableStageName(node.name) })),
-  };
+  // Build a Sankey with a "Total" source node that distributes to each stage
+  const stages = [
+    { label: 'Applied', count: stageTotals.Applied },
+    { label: 'OnlineAssessment', count: stageTotals.OnlineAssessment },
+    { label: 'Interview', count: stageTotals.Interview },
+    { label: 'Offer', count: stageTotals.Offer },
+    { label: 'Rejected', count: stageTotals.Rejected },
+  ];
 
-  // If no real links exist, create implicit links based on stageTotals
-  let mergedData = normalizedData;
-  if (normalizedData.links.length === 0 || normalizedData.links.every((link) => link.value === 0)) {
-    const stages = [
-      { nodeIndex: 0, label: 'Applied', count: stageTotals.Applied },
-      { nodeIndex: 1, label: 'OnlineAssessment', count: stageTotals.OnlineAssessment },
-      { nodeIndex: 2, label: 'Interview', count: stageTotals.Interview },
-      { nodeIndex: 3, label: 'Offer', count: stageTotals.Offer },
-      { nodeIndex: 4, label: 'Rejected', count: stageTotals.Rejected },
-    ];
+  // Create nodes: [Total, Applied, OA, Interview, Offer, Rejected]
+  const sankeyNodes = [{ name: 'Total Applications' }, ...stages.map((s) => ({ name: s.label }))];
 
-    // Create implicit flows: if Applied has 5 and OA has 2, create a link Applied->OA with value 2
-    const implicitLinks = [];
-    for (let i = 0; i < stages.length - 1; i++) {
-      const currentCount = stages[i].count;
-      if (currentCount > 0) {
-        // Flow some to next stage if next stage has items
-        const nextCount = stages[i + 1].count;
-        const flowValue = Math.min(currentCount, nextCount > 0 ? nextCount : currentCount * 0.3);
-        if (flowValue > 0) {
-          implicitLinks.push({ source: i, target: i + 1, value: flowValue });
-        }
+  // Create links from Total to each stage (only if count > 0)
+  const sankeyLinks = stages
+    .map((stage, index) => ({
+      source: 0, // Total node
+      target: index + 1, // Stage node
+      value: stage.count > 0 ? stage.count : 0.1, // Min 0.1 for visibility if count is 0
+    }))
+    .filter((link) => link.value > 0);
+
+  // If we have real links from the data, use those in addition
+  const mergedLinks = [...sankeyLinks];
+  if (data.links.some((link) => link.value > 0)) {
+    // Adjust source/target indices to account for new Total node
+    data.links.forEach((link) => {
+      if (link.value > 0) {
+        mergedLinks.push({
+          source: link.source + 1,
+          target: link.target + 1,
+          value: link.value,
+        });
       }
-    }
-
-    mergedData = {
-      ...normalizedData,
-      links: implicitLinks.length > 0 ? implicitLinks : normalizedData.links,
-    };
+    });
   }
+
+  const sankeyData = {
+    nodes: sankeyNodes,
+    links: mergedLinks,
+  };
 
   return (
     <div className="panel card-sankey">
@@ -73,7 +63,7 @@ export default function SankeyFunnel({ data, stageTotals }: SankeyFunnelProps) {
       <div className="sankey-wrapper">
         <ResponsiveContainer width="100%" height={340}>
           <Sankey
-            data={mergedData}
+            data={sankeyData}
             nodePadding={40}
             margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
             link={{ stroke: 'var(--dashboard-accent, var(--chart-2))' }}
