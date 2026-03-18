@@ -8,21 +8,6 @@ interface SankeyFunnelProps {
 export default function SankeyFunnel({ data }: SankeyFunnelProps) {
   const hasLinks = data.links.some((link) => link.value > 0);
 
-  const anchoredData: FunnelFlowDTO = {
-    nodes: data.nodes,
-    links: [
-      ...data.links,
-      // Anchor links keep early rejected nodes in their own stage columns.
-      { source: 4, target: 2, value: 0 },
-      { source: 5, target: 3, value: 0 },
-      { source: 6, target: 3, value: 0 },
-    ].filter(
-      (link) =>
-        link.source < data.nodes.length &&
-        link.target < data.nodes.length,
-    ),
-  };
-
   return (
     <div className="panel card-sankey">
       <h2>Pipeline Flow</h2>
@@ -31,7 +16,7 @@ export default function SankeyFunnel({ data }: SankeyFunnelProps) {
         {hasLinks ? (
           <ResponsiveContainer width="100%" height={340}>
             <Sankey
-              data={anchoredData}
+              data={data}
               nodePadding={34}
               nodeWidth={12}
               linkCurvature={0.56}
