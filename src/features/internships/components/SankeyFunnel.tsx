@@ -1,8 +1,16 @@
 import { Rectangle, ResponsiveContainer, Sankey, Tooltip } from 'recharts';
+import type { CSSProperties } from 'react';
 import type { FunnelFlowDTO } from '../../../types/internships';
 
 interface SankeyFunnelProps {
   data: FunnelFlowDTO;
+  stageColors: {
+    applied: string;
+    oa: string;
+    interview: string;
+    offer: string;
+    rejected: string;
+  };
 }
 
 interface SankeyNodeShapeProps {
@@ -16,26 +24,58 @@ interface SankeyNodeShapeProps {
     payload?: { name?: string };
     node?: { name?: string };
   };
+  stageColors?: SankeyFunnelProps['stageColors'];
 }
 
-function pickNodeColor(nodeName?: string, index = 0): string {
+function pickNodeColor(
+  nodeName: string | undefined,
+  stageColors: SankeyFunnelProps['stageColors'],
+  index = 0,
+): string {
   const name = (nodeName ?? '').toLowerCase();
 
-  if (name.includes('onlineassessment')) return '#22c55e'; // green
-  if (name.includes('interview') && !name.includes('rejected')) return '#f59e0b'; // orange
-  if (name.includes('offer')) return '#a855f7'; // purple (final)
-  if (name.includes('rejected/ghosted')) return '#ef4444'; // red (aligned with OA)
-  if (name.includes('rejected in oa')) return '#14b8a6'; // aqua (aligned with Interview)
-  if (name.includes('rejected in interview')) return '#fb7185';
-  if (name.includes('applied')) return '#0ea5e9';
+  if (name.includes('onlineassessment')) return stageColors.oa;
+  if (name.includes('interview') && !name.includes('rejected')) return stageColors.interview;
+  if (name.includes('offer')) return stageColors.offer;
+  if (name.includes('rejected')) return stageColors.rejected;
+  if (name.includes('applied')) return stageColors.applied;
 
-  const fallback = ['#0ea5e9', '#22c55e', '#f59e0b', '#a855f7', '#ef4444', '#14b8a6', '#fb7185'];
+  const fallback = [
+    stageColors.applied,
+    stageColors.oa,
+    stageColors.interview,
+    stageColors.offer,
+    stageColors.rejected,
+  ];
   return fallback[index % fallback.length];
 }
 
-function SankeyNodeShape({ x = 0, y = 0, width = 0, height = 0, index = 0, payload }: SankeyNodeShapeProps) {
+interface SankeyLinkShapeProps {
+  sourceX: number;
+  targetX: number;
+  sourceY: number;
+  targetY: number;
+  sourceControlX: number;
+  targetControlX: number;
+  sourceRelativeY: number;
+  targetRelativeY: number;
+  linkWidth: number;
+  payload: {
+    source: { name?: string };
+  };
+  stageColors: SankeyFunnelProps['stageColors'];
+}
+
+function SankeyNodeShape({ x = 0, y = 0, width = 0, height = 0, index = 0, payload, stageColors }: SankeyNodeShapeProps) {
   const nodeName = payload?.name ?? payload?.payload?.name ?? payload?.node?.name;
-  const fill = pickNodeColor(nodeName, index);
+  const palette = stageColors ?? {
+    applied: '#1e3a8a',
+    oa: '#0f766e',
+    interview: '#6d28d9',
+    offer: '#166534',
+    rejected: '#991b1b',
+  };
+  const fill = pickNodeColor(nodeName, palette, index);
 
   return (
     <Rectangle
@@ -49,7 +89,37 @@ function SankeyNodeShape({ x = 0, y = 0, width = 0, height = 0, index = 0, paylo
   );
 }
 
-export default function SankeyFunnel({ data }: SankeyFunnelProps) {
+function SankeyLinkShape({
+  sourceX,
+  targetX,
+  sourceY,
+  targetY,
+  sourceControlX,
+  targetControlX,
+  sourceRelativeY,
+  targetRelativeY,
+  linkWidth,
+  payload,
+  stageColors,
+}: SankeyLinkShapeProps) {
+  const y0 = sourceY + sourceRelativeY;
+  const y1 = targetY + targetRelativeY;
+  const sourceName = payload?.source?.name;
+  const stroke = pickNodeColor(sourceName, stageColors);
+
+  return (
+    <path
+      d={`M${sourceX},${y0} C${sourceControlX},${y0} ${targetControlX},${y1} ${targetX},${y1}`}
+      stroke={stroke}
+      strokeWidth={Math.max(1, linkWidth)}
+      fill="none"
+      strokeOpacity={0.56}
+      style={{ mixBlendMode: 'screen' } as CSSProperties}
+    />
+  );
+}
+
+export default function SankeyFunnel({ data, stageColors }: SankeyFunnelProps) {
   const hasLinks = data.links.some((link) => link.value > 0);
 
   return (
@@ -66,8 +136,8 @@ export default function SankeyFunnel({ data }: SankeyFunnelProps) {
               nodeWidth={12}
               linkCurvature={0.56}
               margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
-              node={<SankeyNodeShape />}
-              link={{ stroke: 'var(--dashboard-accent, var(--chart-2))' }}
+              node={(props) => <SankeyNodeShape {...props} stageColors={stageColors} />}
+              link={(props) => <SankeyLinkShape {...props} stageColors={stageColors} />}
             >
               <Tooltip />
             </Sankey>

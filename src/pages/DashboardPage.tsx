@@ -14,7 +14,7 @@ const DEFAULT_METRIC_COLORS: Record<MetricKey, string> = {
   interviews: '#6d28d9',
   offers: '#166534',
   rejected: '#991b1b',
-  conversion: '#9f1239',
+  conversion: '#111111',
 };
 
 const readStoredMetricColors = (): Record<MetricKey, string> => {
@@ -97,14 +97,24 @@ export default function DashboardPage() {
         <MetricCard
           label="Conversion Rate"
           value={metrics ? `${metrics.conversionRate.toFixed(2)}%` : '-'}
-          color={metricColors.conversion}
-          onColorChange={(color) => updateMetricColor('conversion', color)}
+          color="#111111"
         />
       </div>
 
       <p className="dashboard-helper-note">OA means Online Assessment.</p>
 
-      {funnelQuery.data && <SankeyFunnel data={funnelQuery.data} />}
+      {funnelQuery.data && (
+        <SankeyFunnel
+          data={funnelQuery.data}
+          stageColors={{
+            applied: metricColors.applied,
+            oa: metricColors.oa,
+            interview: metricColors.interviews,
+            offer: metricColors.offers,
+            rejected: metricColors.rejected,
+          }}
+        />
+      )}
     </section>
   );
 }
