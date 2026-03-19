@@ -5,26 +5,32 @@ interface SankeyFunnelProps {
   data: FunnelFlowDTO;
 }
 
-const nodePalette = [
-  '#0ea5e9',
-  '#22c55e',
-  '#f59e0b',
-  '#a855f7',
-  '#ef4444',
-  '#14b8a6',
-  '#84cc16',
-];
-
 interface SankeyNodeShapeProps {
   x?: number;
   y?: number;
   width?: number;
   height?: number;
   index?: number;
+  payload?: { name?: string };
 }
 
-function SankeyNodeShape({ x = 0, y = 0, width = 0, height = 0, index = 0 }: SankeyNodeShapeProps) {
-  const fill = nodePalette[index % nodePalette.length];
+function pickNodeColor(nodeName?: string, index = 0): string {
+  const name = (nodeName ?? '').toLowerCase();
+
+  if (name.includes('onlineassessment')) return '#22c55e'; // green
+  if (name.includes('interview') && !name.includes('rejected')) return '#f59e0b'; // orange
+  if (name.includes('offer')) return '#a855f7'; // purple (final)
+  if (name.includes('rejected/ghosted')) return '#ef4444'; // red (aligned with OA)
+  if (name.includes('rejected in oa')) return '#14b8a6'; // aqua (aligned with Interview)
+  if (name.includes('rejected in interview')) return '#fb7185';
+  if (name.includes('applied')) return '#0ea5e9';
+
+  const fallback = ['#0ea5e9', '#22c55e', '#f59e0b', '#a855f7', '#ef4444', '#14b8a6', '#fb7185'];
+  return fallback[index % fallback.length];
+}
+
+function SankeyNodeShape({ x = 0, y = 0, width = 0, height = 0, index = 0, payload }: SankeyNodeShapeProps) {
+  const fill = pickNodeColor(payload?.name, index);
 
   return (
     <Rectangle
