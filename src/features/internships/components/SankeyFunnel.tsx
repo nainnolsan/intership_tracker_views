@@ -61,6 +61,7 @@ export default function SankeyFunnel({ data }: SankeyFunnelProps) {
           <ResponsiveContainer width="100%" height={340}>
             <Sankey
               data={data}
+              align="left"
               nodePadding={34}
               nodeWidth={12}
               linkCurvature={0.56}
