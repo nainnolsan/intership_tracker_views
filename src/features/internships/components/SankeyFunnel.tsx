@@ -11,7 +11,11 @@ interface SankeyNodeShapeProps {
   width?: number;
   height?: number;
   index?: number;
-  payload?: { name?: string };
+  payload?: {
+    name?: string;
+    payload?: { name?: string };
+    node?: { name?: string };
+  };
 }
 
 function pickNodeColor(nodeName?: string, index = 0): string {
@@ -30,7 +34,8 @@ function pickNodeColor(nodeName?: string, index = 0): string {
 }
 
 function SankeyNodeShape({ x = 0, y = 0, width = 0, height = 0, index = 0, payload }: SankeyNodeShapeProps) {
-  const fill = pickNodeColor(payload?.name, index);
+  const nodeName = payload?.name ?? payload?.payload?.name ?? payload?.node?.name;
+  const fill = pickNodeColor(nodeName, index);
 
   return (
     <Rectangle
