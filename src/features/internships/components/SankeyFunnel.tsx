@@ -148,8 +148,16 @@ export default function SankeyFunnel({ data, stageColors }: SankeyFunnelProps) {
     const incoming = data.links
       .filter((link) => link.target === idx)
       .reduce((sum, link) => sum + link.value, 0);
-    return Math.max(outgoing, incoming, 1);
+    return Math.max(outgoing, incoming, 0);
   });
+
+  const activeNodeIndices = new Set<number>();
+  data.links
+    .filter((link) => link.value > 0)
+    .forEach((link) => {
+      activeNodeIndices.add(link.source);
+      activeNodeIndices.add(link.target);
+    });
 
   const totalApplied = Math.max(
     nodeValues[0] ?? 0,
@@ -161,7 +169,11 @@ export default function SankeyFunnel({ data, stageColors }: SankeyFunnelProps) {
 
   const columnX = [44, 400, 760, 1120];
 
-  const nodes: LayoutNode[] = data.nodes.map((node, idx) => {
+  const nodes: LayoutNode[] = data.nodes.flatMap((node, idx) => {
+    if (!activeNodeIndices.has(idx)) {
+      return [];
+    }
+
     const level = getNodeLevel(node.name);
     const height = nodeValues[idx] * verticalUnit;
     const x = columnX[level] ?? columnX[0];
@@ -177,18 +189,20 @@ export default function SankeyFunnel({ data, stageColors }: SankeyFunnelProps) {
 
     y = clamp(y, innerTop, innerBottom - height);
 
-    return {
-      index: idx,
-      name: node.name,
-      value: nodeValues[idx],
-      x,
-      y,
-      width: nodeWidth,
-      height,
-      color: pickNodeColor(node.name, stageColors, idx),
-      sourceCursor: 0,
-      targetCursor: 0,
-    };
+    return [
+      {
+        index: idx,
+        name: node.name,
+        value: nodeValues[idx],
+        x,
+        y,
+        width: nodeWidth,
+        height,
+        color: pickNodeColor(node.name, stageColors, idx),
+        sourceCursor: 0,
+        targetCursor: 0,
+      },
+    ];
   });
 
   const nodeByIndex = new Map<number, LayoutNode>(nodes.map((n) => [n.index, n]));
