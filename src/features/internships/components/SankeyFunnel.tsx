@@ -121,7 +121,7 @@ function SankeyLinkShape({
 
 export default function SankeyFunnel({ data, stageColors }: SankeyFunnelProps) {
   const hasLinks = data.links.some((link) => link.value > 0);
-  const chartHeight = Math.max(360, Math.min(560, data.nodes.length * 52));
+  const chartHeight = Math.max(420, Math.min(620, data.nodes.length * 60));
 
   return (
     <div className="panel card-sankey">
@@ -133,10 +133,11 @@ export default function SankeyFunnel({ data, stageColors }: SankeyFunnelProps) {
             <Sankey
               data={data}
               align="left"
+              sort={false}
               nodePadding={22}
               nodeWidth={12}
               linkCurvature={0.56}
-              margin={{ top: 28, right: 28, bottom: 28, left: 28 }}
+              margin={{ top: 32, right: 32, bottom: 40, left: 32 }}
               node={(props) => <SankeyNodeShape {...props} stageColors={stageColors} />}
               link={(props) => <SankeyLinkShape {...props} stageColors={stageColors} />}
             >
