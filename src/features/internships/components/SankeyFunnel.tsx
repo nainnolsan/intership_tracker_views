@@ -56,8 +56,6 @@ interface SankeyLinkShapeProps {
   targetY: number;
   sourceControlX: number;
   targetControlX: number;
-  sourceRelativeY: number;
-  targetRelativeY: number;
   linkWidth: number;
   payload: {
     source: { name?: string };
@@ -96,16 +94,14 @@ function SankeyLinkShape({
   targetY,
   sourceControlX,
   targetControlX,
-  sourceRelativeY,
-  targetRelativeY,
   linkWidth,
   payload,
   stageColors,
 }: SankeyLinkShapeProps) {
-  // Recharts gives relative Y at the top edge of each flow band.
-  // Draw from the band center to avoid clipping thick strokes at chart bounds.
-  const y0 = sourceY + sourceRelativeY + linkWidth / 2;
-  const y1 = targetY + targetRelativeY + linkWidth / 2;
+  // sourceY/targetY are absolute band origins for this link instance.
+  // Draw from each band center so split branches stay aligned.
+  const y0 = sourceY + linkWidth / 2;
+  const y1 = targetY + linkWidth / 2;
   const targetName = payload?.target?.name;
   const sourceName = payload?.source?.name;
 
