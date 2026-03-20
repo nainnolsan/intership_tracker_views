@@ -102,8 +102,10 @@ function SankeyLinkShape({
   payload,
   stageColors,
 }: SankeyLinkShapeProps) {
-  const y0 = sourceY + sourceRelativeY;
-  const y1 = targetY + targetRelativeY;
+  // Recharts gives relative Y at the top edge of each flow band.
+  // Draw from the band center to avoid clipping thick strokes at chart bounds.
+  const y0 = sourceY + sourceRelativeY + linkWidth / 2;
+  const y1 = targetY + targetRelativeY + linkWidth / 2;
   const sourceName = payload?.source?.name;
   const stroke = pickNodeColor(sourceName, stageColors);
 
@@ -112,6 +114,7 @@ function SankeyLinkShape({
       d={`M${sourceX},${y0} C${sourceControlX},${y0} ${targetControlX},${y1} ${targetX},${y1}`}
       stroke={stroke}
       strokeWidth={Math.max(1, linkWidth)}
+      strokeLinecap="round"
       fill="none"
       strokeOpacity={0.56}
       style={{ mixBlendMode: 'screen' } as CSSProperties}
@@ -135,7 +138,7 @@ export default function SankeyFunnel({ data, stageColors }: SankeyFunnelProps) {
               nodePadding={34}
               nodeWidth={12}
               linkCurvature={0.56}
-              margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
+              margin={{ top: 28, right: 28, bottom: 28, left: 28 }}
               node={(props) => <SankeyNodeShape {...props} stageColors={stageColors} />}
               link={(props) => <SankeyLinkShape {...props} stageColors={stageColors} />}
             >
