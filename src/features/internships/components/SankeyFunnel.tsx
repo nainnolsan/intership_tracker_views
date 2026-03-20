@@ -1,4 +1,3 @@
-import { Rectangle, ResponsiveContainer, Sankey, Tooltip } from 'recharts';
 import type { FunnelFlowDTO } from '../../../types/internships';
 
 interface SankeyFunnelProps {
@@ -13,17 +12,11 @@ interface SankeyFunnelProps {
 }
 
 interface SankeyNodeShapeProps {
-  x?: number;
-  y?: number;
-  width?: number;
-  height?: number;
-  index?: number;
-  payload?: {
-    name?: string;
-    payload?: { name?: string };
-    node?: { name?: string };
-  };
-  stageColors?: SankeyFunnelProps['stageColors'];
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  fill: string;
 }
 
 function pickNodeColor(
@@ -49,122 +42,228 @@ function pickNodeColor(
   return fallback[index % fallback.length];
 }
 
-interface SankeyLinkShapeProps {
-  sourceX: number;
-  targetX: number;
-  sourceY: number;
-  targetY: number;
-  sourceControlX: number;
-  targetControlX: number;
-  sourceRelativeY?: number;
-  targetRelativeY?: number;
-  linkWidth: number;
-  payload: {
-    source: { name?: string };
-    target: { name?: string };
-  };
-  stageColors: SankeyFunnelProps['stageColors'];
-}
-
-function getLinkCenterY(baseY: number, relativeY: number | undefined, linkWidth: number): number {
-  return baseY + (relativeY ?? 0) + linkWidth / 2;
-}
-
-function buildSankeyPath(
+function buildRibbonPath(
   sourceX: number,
   targetX: number,
-  sourceControlX: number,
-  targetControlX: number,
-  y0: number,
-  y1: number,
+  sourceTop: number,
+  sourceBottom: number,
+  targetTop: number,
+  targetBottom: number,
 ): string {
-  return `M${sourceX},${y0} C${sourceControlX},${y0} ${targetControlX},${y1} ${targetX},${y1}`;
+  const c0 = sourceX + (targetX - sourceX) * 0.5;
+  const c1 = targetX - (targetX - sourceX) * 0.5;
+
+  return [
+    `M ${sourceX} ${sourceTop}`,
+    `C ${c0} ${sourceTop}, ${c1} ${targetTop}, ${targetX} ${targetTop}`,
+    `L ${targetX} ${targetBottom}`,
+    `C ${c1} ${targetBottom}, ${c0} ${sourceBottom}, ${sourceX} ${sourceBottom}`,
+    'Z',
+  ].join(' ');
 }
 
-function SankeyNodeShape({ x = 0, y = 0, width = 0, height = 0, index = 0, payload, stageColors }: SankeyNodeShapeProps) {
-  const nodeName = payload?.name ?? payload?.payload?.name ?? payload?.node?.name;
-  const palette = stageColors ?? {
-    applied: '#1e3a8a',
-    oa: '#0f766e',
-    interview: '#6d28d9',
-    offer: '#166534',
-    rejected: '#991b1b',
-  };
-  const fill = pickNodeColor(nodeName, palette, index);
-
+function SankeyNodeShape({ x, y, width, height, fill }: SankeyNodeShapeProps) {
   return (
-    <Rectangle
+    <rect
       x={x}
       y={y}
       width={width}
       height={height}
       fill={fill}
-      radius={1}
+      rx={2}
     />
   );
 }
 
-function SankeyLinkShape({
-  sourceX,
-  targetX,
-  sourceY,
-  targetY,
-  sourceControlX,
-  targetControlX,
-  sourceRelativeY,
-  targetRelativeY,
-  linkWidth,
-  payload,
-  stageColors,
-}: SankeyLinkShapeProps) {
-  // Match Recharts default geometry: base column Y + per-link offset + half band width.
-  const y0 = getLinkCenterY(sourceY, sourceRelativeY, linkWidth);
-  const y1 = getLinkCenterY(targetY, targetRelativeY, linkWidth);
-  const targetName = payload?.target?.name;
-  const sourceName = payload?.source?.name;
+type LayoutNode = {
+  index: number;
+  name: string;
+  value: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  color: string;
+  sourceCursor: number;
+  targetCursor: number;
+};
 
-  // Color links by destination stage to reflect the branch outcome.
-  const stroke = pickNodeColor(targetName ?? sourceName, stageColors);
+type LayoutLink = {
+  source: number;
+  target: number;
+  value: number;
+  color: string;
+};
 
-  return (
-    <path
-      d={buildSankeyPath(sourceX, targetX, sourceControlX, targetControlX, y0, y1)}
-      stroke={stroke}
-      strokeWidth={Math.max(1, linkWidth)}
-      fill="none"
-      strokeOpacity={0.5}
-    />
-  );
+function getNodeLevel(nodeName: string): number {
+  const n = nodeName.toLowerCase();
+  if (n.includes('applied') && !n.includes('rejected')) return 0;
+  if (n.includes('onlineassessment')) return 1;
+  if (n.includes('interview') && !n.includes('rejected')) return 2;
+  if (n.includes('offer')) return 3;
+  if (n.includes('rejected') && n.includes('applied')) return 1;
+  if (n.includes('rejected') && n.includes('oa')) return 2;
+  if (n.includes('rejected') && n.includes('interview')) return 3;
+  return 0;
+}
+
+function isRejectedNode(nodeName: string): boolean {
+  return nodeName.toLowerCase().includes('rejected');
+}
+
+function isOfferNode(nodeName: string): boolean {
+  return nodeName.toLowerCase().includes('offer');
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
 }
 
 export default function SankeyFunnel({ data, stageColors }: SankeyFunnelProps) {
   const hasLinks = data.links.some((link) => link.value > 0);
-  const chartHeight = Math.max(420, Math.min(620, data.nodes.length * 60));
+  const chartHeight = Math.max(420, Math.min(640, data.nodes.length * 64));
+
+  if (!hasLinks) {
+    return (
+      <div className="panel card-sankey">
+        <h2>Pipeline Flow</h2>
+        <p className="panel-description">All Applications to OA/Rejected and progress through each stage.</p>
+        <div className="sankey-wrapper">
+          <p className="funnel-fallback-note">No pipeline transitions yet. Start updating stages to see flow branches.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const viewWidth = 1200;
+  const nodeWidth = 12;
+  const innerTop = 24;
+  const innerBottom = chartHeight - 24;
+  const innerHeight = innerBottom - innerTop;
+
+  const nodeValues = data.nodes.map((_, idx) => {
+    const outgoing = data.links
+      .filter((link) => link.source === idx)
+      .reduce((sum, link) => sum + link.value, 0);
+    const incoming = data.links
+      .filter((link) => link.target === idx)
+      .reduce((sum, link) => sum + link.value, 0);
+    return Math.max(outgoing, incoming, 1);
+  });
+
+  const totalApplied = Math.max(
+    nodeValues[0] ?? 0,
+    data.links.filter((link) => link.source === 0).reduce((sum, link) => sum + link.value, 0),
+    1,
+  );
+
+  const verticalUnit = innerHeight / totalApplied;
+
+  const columnX = [44, 400, 760, 1120];
+
+  const nodes: LayoutNode[] = data.nodes.map((node, idx) => {
+    const level = getNodeLevel(node.name);
+    const height = nodeValues[idx] * verticalUnit;
+    const x = columnX[level] ?? columnX[0];
+
+    let y = innerTop;
+    if (level === 0) {
+      y = innerTop + (innerHeight - height) / 2;
+    } else if (isRejectedNode(node.name)) {
+      y = innerBottom - height;
+    } else if (isOfferNode(node.name)) {
+      y = innerTop + (innerHeight - height) / 2;
+    }
+
+    y = clamp(y, innerTop, innerBottom - height);
+
+    return {
+      index: idx,
+      name: node.name,
+      value: nodeValues[idx],
+      x,
+      y,
+      width: nodeWidth,
+      height,
+      color: pickNodeColor(node.name, stageColors, idx),
+      sourceCursor: 0,
+      targetCursor: 0,
+    };
+  });
+
+  const nodeByIndex = new Map<number, LayoutNode>(nodes.map((n) => [n.index, n]));
+
+  const orderedLinks: LayoutLink[] = data.links
+    .filter((link) => link.value > 0)
+    .map((link) => {
+      const target = data.nodes[link.target]?.name;
+      const source = data.nodes[link.source]?.name;
+      return {
+        ...link,
+        color: pickNodeColor(target ?? source, stageColors),
+      };
+    })
+    .sort((a, b) => {
+      if (a.source !== b.source) return a.source - b.source;
+      const ta = nodeByIndex.get(a.target)?.y ?? 0;
+      const tb = nodeByIndex.get(b.target)?.y ?? 0;
+      return ta - tb;
+    });
 
   return (
     <div className="panel card-sankey">
       <h2>Pipeline Flow</h2>
       <p className="panel-description">All Applications to OA/Rejected and progress through each stage.</p>
       <div className="sankey-wrapper">
-        {hasLinks ? (
-          <ResponsiveContainer width="100%" height={chartHeight}>
-            <Sankey
-              data={data}
-              align="left"
-              sort={false}
-              nodePadding={22}
-              nodeWidth={12}
-              linkCurvature={0.56}
-              margin={{ top: 32, right: 32, bottom: 40, left: 32 }}
-              node={(props) => <SankeyNodeShape {...props} stageColors={stageColors} />}
-              link={(props) => <SankeyLinkShape {...props} stageColors={stageColors} />}
-            >
-              <Tooltip />
-            </Sankey>
-          </ResponsiveContainer>
-        ) : (
-          <p className="funnel-fallback-note">No pipeline transitions yet. Start updating stages to see flow branches.</p>
-        )}
+        <svg width="100%" height={chartHeight} viewBox={`0 0 ${viewWidth} ${chartHeight}`} preserveAspectRatio="none">
+          {orderedLinks.map((link) => {
+            const source = nodeByIndex.get(link.source);
+            const target = nodeByIndex.get(link.target);
+
+            if (!source || !target) {
+              return null;
+            }
+
+            const thickness = Math.max(1, link.value * verticalUnit);
+            const sourceTop = source.y + source.sourceCursor;
+            const sourceBottom = sourceTop + thickness;
+            source.sourceCursor += thickness;
+
+            const targetTop = target.y + target.targetCursor;
+            const targetBottom = targetTop + thickness;
+            target.targetCursor += thickness;
+
+            return (
+              <path
+                key={`${link.source}-${link.target}-${link.value}`}
+                d={buildRibbonPath(
+                  source.x + source.width,
+                  target.x,
+                  sourceTop,
+                  sourceBottom,
+                  targetTop,
+                  targetBottom,
+                )}
+                fill={link.color}
+                fillOpacity={0.52}
+                stroke="none"
+              >
+                <title>{`${source.value} ${source.name} -> ${target.name}: ${link.value}`}</title>
+              </path>
+            );
+          })}
+
+          {nodes.map((node) => (
+            <SankeyNodeShape
+              key={node.index}
+              x={node.x}
+              y={node.y}
+              width={node.width}
+              height={node.height}
+              fill={node.color}
+            />
+          ))}
+        </svg>
       </div>
     </div>
   );
