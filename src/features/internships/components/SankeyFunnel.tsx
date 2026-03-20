@@ -1,5 +1,4 @@
 import { Rectangle, ResponsiveContainer, Sankey, Tooltip } from 'recharts';
-import type { CSSProperties } from 'react';
 import type { FunnelFlowDTO } from '../../../types/internships';
 
 interface SankeyFunnelProps {
@@ -114,10 +113,8 @@ function SankeyLinkShape({
       d={`M${sourceX},${y0} C${sourceControlX},${y0} ${targetControlX},${y1} ${targetX},${y1}`}
       stroke={stroke}
       strokeWidth={Math.max(1, linkWidth)}
-      strokeLinecap="round"
       fill="none"
-      strokeOpacity={0.56}
-      style={{ mixBlendMode: 'screen' } as CSSProperties}
+      strokeOpacity={0.5}
     />
   );
 }
@@ -131,11 +128,11 @@ export default function SankeyFunnel({ data, stageColors }: SankeyFunnelProps) {
       <p className="panel-description">All Applications to OA/Rejected and progress through each stage.</p>
       <div className="sankey-wrapper">
         {hasLinks ? (
-          <ResponsiveContainer width="100%" height={340}>
+          <ResponsiveContainer width="100%" height={420}>
             <Sankey
               data={data}
               align="left"
-              nodePadding={34}
+              nodePadding={22}
               nodeWidth={12}
               linkCurvature={0.56}
               margin={{ top: 28, right: 28, bottom: 28, left: 28 }}
