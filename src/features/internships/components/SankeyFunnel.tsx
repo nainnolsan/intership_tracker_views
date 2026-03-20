@@ -61,6 +61,7 @@ interface SankeyLinkShapeProps {
   linkWidth: number;
   payload: {
     source: { name?: string };
+    target: { name?: string };
   };
   stageColors: SankeyFunnelProps['stageColors'];
 }
@@ -105,8 +106,11 @@ function SankeyLinkShape({
   // Draw from the band center to avoid clipping thick strokes at chart bounds.
   const y0 = sourceY + sourceRelativeY + linkWidth / 2;
   const y1 = targetY + targetRelativeY + linkWidth / 2;
+  const targetName = payload?.target?.name;
   const sourceName = payload?.source?.name;
-  const stroke = pickNodeColor(sourceName, stageColors);
+
+  // Color links by destination stage to reflect the branch outcome.
+  const stroke = pickNodeColor(targetName ?? sourceName, stageColors);
 
   return (
     <path
