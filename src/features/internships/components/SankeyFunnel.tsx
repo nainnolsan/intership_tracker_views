@@ -121,6 +121,7 @@ function SankeyLinkShape({
 
 export default function SankeyFunnel({ data, stageColors }: SankeyFunnelProps) {
   const hasLinks = data.links.some((link) => link.value > 0);
+  const chartHeight = Math.max(360, Math.min(560, data.nodes.length * 52));
 
   return (
     <div className="panel card-sankey">
@@ -128,7 +129,7 @@ export default function SankeyFunnel({ data, stageColors }: SankeyFunnelProps) {
       <p className="panel-description">All Applications to OA/Rejected and progress through each stage.</p>
       <div className="sankey-wrapper">
         {hasLinks ? (
-          <ResponsiveContainer width="100%" height={420}>
+          <ResponsiveContainer width="100%" height={chartHeight}>
             <Sankey
               data={data}
               align="left"
