@@ -56,12 +56,29 @@ interface SankeyLinkShapeProps {
   targetY: number;
   sourceControlX: number;
   targetControlX: number;
+  sourceRelativeY?: number;
+  targetRelativeY?: number;
   linkWidth: number;
   payload: {
     source: { name?: string };
     target: { name?: string };
   };
   stageColors: SankeyFunnelProps['stageColors'];
+}
+
+function getLinkCenterY(baseY: number, relativeY: number | undefined, linkWidth: number): number {
+  return baseY + (relativeY ?? 0) + linkWidth / 2;
+}
+
+function buildSankeyPath(
+  sourceX: number,
+  targetX: number,
+  sourceControlX: number,
+  targetControlX: number,
+  y0: number,
+  y1: number,
+): string {
+  return `M${sourceX},${y0} C${sourceControlX},${y0} ${targetControlX},${y1} ${targetX},${y1}`;
 }
 
 function SankeyNodeShape({ x = 0, y = 0, width = 0, height = 0, index = 0, payload, stageColors }: SankeyNodeShapeProps) {
@@ -94,14 +111,15 @@ function SankeyLinkShape({
   targetY,
   sourceControlX,
   targetControlX,
+  sourceRelativeY,
+  targetRelativeY,
   linkWidth,
   payload,
   stageColors,
 }: SankeyLinkShapeProps) {
-  // sourceY/targetY are absolute band origins for this link instance.
-  // Draw from each band center so split branches stay aligned.
-  const y0 = sourceY + linkWidth / 2;
-  const y1 = targetY + linkWidth / 2;
+  // Match Recharts default geometry: base column Y + per-link offset + half band width.
+  const y0 = getLinkCenterY(sourceY, sourceRelativeY, linkWidth);
+  const y1 = getLinkCenterY(targetY, targetRelativeY, linkWidth);
   const targetName = payload?.target?.name;
   const sourceName = payload?.source?.name;
 
@@ -110,7 +128,7 @@ function SankeyLinkShape({
 
   return (
     <path
-      d={`M${sourceX},${y0} C${sourceControlX},${y0} ${targetControlX},${y1} ${targetX},${y1}`}
+      d={buildSankeyPath(sourceX, targetX, sourceControlX, targetControlX, y0, y1)}
       stroke={stroke}
       strokeWidth={Math.max(1, linkWidth)}
       fill="none"
