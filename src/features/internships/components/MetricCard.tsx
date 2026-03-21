@@ -8,7 +8,24 @@ interface MetricCardProps {
   onColorChange?: (value: string) => void;
 }
 
-const PRESET_COLORS = ['#1e3a8a', '#0f766e', '#6d28d9', '#166534', '#b45309', '#be123c'];
+const PRESET_COLORS = [
+  '#d84a1b',
+  '#ff2714',
+  '#d92671',
+  '#8e44ad',
+  '#6451a8',
+  '#3d4ca4',
+  '#2069a6',
+  '#229fd7',
+  '#0f95a0',
+  '#0f8b83',
+  '#15a814',
+  '#8d9a0d',
+  '#d97e00',
+  '#f25f0b',
+  '#e85d8e',
+  '#626e7b',
+];
 
 const getTextColor = (hex: string): string => {
   const normalized = hex.replace('#', '');
@@ -25,6 +42,8 @@ const getTextColor = (hex: string): string => {
 };
 
 export default function MetricCard({ label, value, color, onColorChange }: MetricCardProps) {
+  const normalizedColor = color.toLowerCase();
+  const isPresetColor = PRESET_COLORS.includes(normalizedColor);
   const textColor = useMemo(() => getTextColor(color), [color]);
   const cardStyle = useMemo(
     () => ({ '--metric-solid-bg': color, '--metric-solid-ink': textColor } as CSSProperties),
@@ -46,21 +65,26 @@ export default function MetricCard({ label, value, color, onColorChange }: Metri
                   <button
                     key={preset}
                     type="button"
-                    className={`color-swatch ${color.toLowerCase() === preset ? 'active' : ''}`}
+                    className={`color-swatch ${normalizedColor === preset ? 'active' : ''}`}
                     style={{ backgroundColor: preset }}
                     onClick={() => onColorChange(preset)}
                     aria-label={`Select color ${preset}`}
                   />
                 ))}
+
+                <label
+                  className={`color-swatch custom-color-swatch ${!isPresetColor ? 'active' : ''}`}
+                  style={{ backgroundColor: color }}
+                  aria-label={`Select custom color for ${label}`}
+                >
+                  <input
+                    type="color"
+                    value={color}
+                    onChange={(event) => onColorChange(event.target.value)}
+                  />
+                </label>
               </div>
-              <label className="color-picker-label">
-                Custom
-                <input
-                  type="color"
-                  value={color}
-                  onChange={(event) => onColorChange(event.target.value)}
-                />
-              </label>
+              <p className="color-picker-label">Custom color</p>
             </div>
           </>
         ) : null}
