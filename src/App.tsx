@@ -22,8 +22,6 @@ interface ProfileQueryData {
 const links = [
   { to: '/dashboard', label: 'Dashboard' },
   { to: '/applications', label: 'Applications' },
-  { to: '/pipeline', label: 'Pipeline Board' },
-  { to: '/analytics', label: 'Analytics' },
   { to: '/email-center', label: 'Email Center' },
 ];
 

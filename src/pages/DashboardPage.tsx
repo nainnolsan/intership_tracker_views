@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { Bar, BarChart, CartesianGrid, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import MetricCard from '../features/internships/components/MetricCard';
 import PageHeader from '../features/internships/components/PageHeader';
 import SankeyFunnel from '../features/internships/components/SankeyFunnel';
-import { useDashboardMetrics, useFunnelFlow } from '../features/internships/hooks/useInternshipsData';
+import PipelineColumn from '../features/internships/components/PipelineColumn';
+import { useDashboardMetrics, useFunnelFlow, useAnalyticsOverview, usePipelineBoard } from '../features/internships/hooks/useInternshipsData';
 
 const DASHBOARD_METRIC_COLORS_STORAGE_KEY = 'dashboardMetricColors';
 
@@ -42,8 +44,11 @@ export default function DashboardPage() {
   const [metricColors, setMetricColors] = useState<Record<MetricKey, string>>(readStoredMetricColors);
   const metricsQuery = useDashboardMetrics();
   const funnelQuery = useFunnelFlow();
+  const analyticsQuery = useAnalyticsOverview();
+  const pipelineQuery = usePipelineBoard();
 
   const metrics = metricsQuery.data;
+  const analyticsData = analyticsQuery.data;
 
   const updateMetricColor = (key: MetricKey, value: string) => {
     setMetricColors((previous) => {
@@ -115,6 +120,60 @@ export default function DashboardPage() {
           }}
         />
       )}
+
+      <h2 style={{ marginTop: '2rem', marginBottom: '1rem', fontSize: '1.875rem', fontWeight: 'bold', color: 'var(--ink)' }}>Analytics</h2>
+      <div className="analytics-grid">
+        <article className="panel">
+          <h2>Daily Activity</h2>
+          <div className="chart-box">
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={analyticsData?.daily ?? []}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip />
+                <Line type="monotone" dataKey="applied" stroke="var(--chart-1)" strokeWidth={2} />
+                <Line type="monotone" dataKey="interview" stroke="var(--chart-2)" strokeWidth={2} />
+                <Line type="monotone" dataKey="offer" stroke="var(--chart-3)" strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </article>
+
+        <article className="panel">
+          <h2>Stage Mix</h2>
+          <div className="chart-box">
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie data={analyticsData?.stageDistribution ?? []} dataKey="value" nameKey="stage" outerRadius={100} fill="var(--chart-2)" />
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </article>
+
+        <article className="panel panel-wide">
+          <h2>Stage Volume</h2>
+          <div className="chart-box">
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={analyticsData?.stageDistribution ?? []}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="stage" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="value" fill="var(--chart-2)" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </article>
+      </div>
+
+      <h2 style={{ marginTop: '2rem', marginBottom: '1rem', fontSize: '1.875rem', fontWeight: 'bold', color: 'var(--ink)' }}>Pipeline Board</h2>
+      <div className="pipeline-board">
+        {(pipelineQuery.data ?? []).map((column) => (
+          <PipelineColumn key={column.stage} column={column} />
+        ))}
+      </div>
     </section>
   );
 }
