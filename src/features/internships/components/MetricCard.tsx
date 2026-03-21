@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 
 interface MetricCardProps {
@@ -44,15 +44,61 @@ const getTextColor = (hex: string): string => {
 export default function MetricCard({ label, value, color, onColorChange }: MetricCardProps) {
   const normalizedColor = color.toLowerCase();
   const isPresetColor = PRESET_COLORS.includes(normalizedColor);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const detailsRef = useRef<HTMLDetailsElement | null>(null);
   const textColor = useMemo(() => getTextColor(color), [color]);
   const cardStyle = useMemo(
     () => ({ '--metric-solid-bg': color, '--metric-solid-ink': textColor } as CSSProperties),
     [color, textColor],
   );
 
+  useEffect(() => {
+    if (!menuOpen) {
+      return;
+    }
+
+    const handlePointerDown = (event: MouseEvent) => {
+      const root = detailsRef.current;
+      if (!root) {
+        return;
+      }
+
+      if (!root.contains(event.target as Node)) {
+        root.removeAttribute('open');
+        setMenuOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') {
+        return;
+      }
+
+      const root = detailsRef.current;
+      if (!root) {
+        return;
+      }
+
+      root.removeAttribute('open');
+      setMenuOpen(false);
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [menuOpen]);
+
   return (
     <article className="metric-card metric-card-solid" style={cardStyle}>
-      <details className="metric-color-menu">
+      <details
+        ref={detailsRef}
+        className="metric-color-menu"
+        onToggle={(event) => setMenuOpen((event.currentTarget as HTMLDetailsElement).open)}
+      >
         {onColorChange ? (
           <>
             <summary className="metric-color-trigger" aria-label={`Customize ${label} color`}>
