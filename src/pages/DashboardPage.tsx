@@ -132,9 +132,9 @@ export default function DashboardPage() {
                 <XAxis dataKey="date" />
                 <YAxis />
                 <Tooltip />
-                <Line type="monotone" dataKey="applied" stroke="var(--chart-1)" strokeWidth={2} />
-                <Line type="monotone" dataKey="interview" stroke="var(--chart-2)" strokeWidth={2} />
-                <Line type="monotone" dataKey="offer" stroke="var(--chart-3)" strokeWidth={2} />
+                <Line type="monotone" dataKey="applied" stroke={metricColors.applied} strokeWidth={2} />
+                <Line type="monotone" dataKey="interview" stroke={metricColors.interviews} strokeWidth={2} />
+                <Line type="monotone" dataKey="offer" stroke={metricColors.offers} strokeWidth={2} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -145,7 +145,25 @@ export default function DashboardPage() {
           <div className="chart-box">
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
-                <Pie data={analyticsData?.stageDistribution ?? []} dataKey="value" nameKey="stage" outerRadius={100} fill="var(--chart-2)" />
+                <Pie
+                  data={analyticsData?.stageDistribution?.map((item: { stage: string; value: number }) => ({
+                    ...item,
+                    fill:
+                      item.stage === 'Rejected'
+                        ? metricColors.rejected
+                        : item.stage === 'Offer'
+                          ? metricColors.offers
+                          : item.stage === 'Interview'
+                            ? metricColors.interviews
+                            : item.stage === 'OnlineAssessment'
+                              ? metricColors.oa
+                              : metricColors.applied,
+                  })) ?? []
+                }
+                  dataKey="value"
+                  nameKey="stage"
+                  outerRadius={100}
+                />
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>
@@ -156,12 +174,27 @@ export default function DashboardPage() {
           <h2>Stage Volume</h2>
           <div className="chart-box">
             <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={analyticsData?.stageDistribution ?? []}>
+              <BarChart
+                data={analyticsData?.stageDistribution?.map((item: { stage: string; value: number }) => ({
+                  ...item,
+                  fill:
+                    item.stage === 'Rejected'
+                      ? metricColors.rejected
+                      : item.stage === 'Offer'
+                        ? metricColors.offers
+                        : item.stage === 'Interview'
+                          ? metricColors.interviews
+                          : item.stage === 'OnlineAssessment'
+                            ? metricColors.oa
+                            : metricColors.applied,
+                })) ?? []
+              }
+              >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="stage" />
                 <YAxis />
                 <Tooltip />
-                <Bar dataKey="value" fill="var(--chart-2)" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="value" fill={metricColors.applied} radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
