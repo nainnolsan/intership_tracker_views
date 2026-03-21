@@ -7,6 +7,7 @@ import {
   GET_PIPELINE,
   GET_ANALYTICS_OVERVIEW,
   GET_EMAIL_CENTER,
+  GET_STAGE_LAYOUT,
 } from '../../../graphql/internshipQueries';
 import {
   ADD_INTERNSHIP_STAGE_EVENT,
@@ -16,6 +17,7 @@ import {
   UPDATE_INTERNSHIP_STAGE_EVENT,
   UPDATE_INTERNSHIP_APPLICATION,
   CONNECT_EMAIL_PROVIDER,
+  SAVE_STAGE_LAYOUT,
 } from '../../../graphql/internshipMutations';
 import type {
   ApplicationDTO,
@@ -33,6 +35,8 @@ import type {
   RoleType,
   UpdateApplicationDTO,
   UpdateStageEventDTO,
+  SaveStageLayoutItemDTO,
+  StageLayoutItemDTO,
 } from '../../../types/internships';
 
 // ── GraphQL response shapes ──────────────────────────────────────────────────
@@ -42,6 +46,7 @@ interface ApplicationsResponse     { internshipApplications: ApplicationDTO[] }
 interface PipelineResponse         { internshipPipeline: PipelineColumnDTO[] }
 interface AnalyticsResponse        { internshipAnalyticsOverview: AnalyticsOverviewDTO }
 interface EmailCenterResponse      { internshipEmailCenter: EmailCenterDTO }
+interface StageLayoutResponse      { internshipStageLayout: StageLayoutItemDTO[] }
 interface ApplicationJourneyResponse { internshipApplicationJourney: ApplicationJourneyDTO }
 interface ApplicationMutationResponse { createInternshipApplication: ApplicationDTO }
 interface UpdateMutationResponse      { updateInternshipApplication: ApplicationDTO }
@@ -50,6 +55,7 @@ interface UpdateStageEventResponse    { updateInternshipStageEvent: { id: string
 interface DeleteStageEventResponse    { deleteInternshipStageEvent: ActionResponseDTO }
 interface DeleteApplicationResponse   { deleteInternshipApplication: ActionResponseDTO }
 interface ConnectProviderResponse     { connectInternshipEmailProvider: { redirectUrl: string } }
+interface SaveStageLayoutResponse     { saveInternshipStageLayout: ActionResponseDTO }
 
 interface ApplicationsVariables    { filters?: Partial<{ stage: ApplicationStage; company: string; roleType: RoleType; fromDate: string; toDate: string; q: string }> }
 interface CreateApplicationVariables { input: CreateApplicationDTO }
@@ -60,6 +66,7 @@ interface AddStageEventVariables      { id: string; input: AddStageEventDTO }
 interface UpdateStageEventVariables   { id: string; eventId: string; input: UpdateStageEventDTO }
 interface DeleteStageEventVariables   { id: string; eventId: string }
 interface DeleteApplicationVariables  { id: string }
+interface SaveStageLayoutVariables    { layout: SaveStageLayoutItemDTO[] }
 
 // ── Refetch list after mutations ─────────────────────────────────────────────
 const refetchQueries = [
@@ -121,6 +128,11 @@ export function useAnalyticsOverview() {
 export function useEmailCenter() {
   const { data, loading, error } = useQuery<EmailCenterResponse>(GET_EMAIL_CENTER);
   return { data: data?.internshipEmailCenter, loading, error };
+}
+
+export function useStageLayout() {
+  const { data, loading, error, refetch } = useQuery<StageLayoutResponse>(GET_STAGE_LAYOUT);
+  return { data: data?.internshipStageLayout, loading, error, refetch };
 }
 
 // ── Mutation hooks ───────────────────────────────────────────────────────────
@@ -189,6 +201,15 @@ export function useConnectEmailProvider() {
   );
   const mutateAsync = (provider: 'gmail' | 'outlook') =>
     execute({ variables: { provider } });
+  return { ...result, mutateAsync };
+}
+
+export function useSaveStageLayout() {
+  const [execute, result] = useMutation<SaveStageLayoutResponse, SaveStageLayoutVariables>(
+    SAVE_STAGE_LAYOUT,
+  );
+  const mutateAsync = (layout: SaveStageLayoutItemDTO[]) =>
+    execute({ variables: { layout } });
   return { ...result, mutateAsync };
 }
 

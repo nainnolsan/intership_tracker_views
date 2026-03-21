@@ -142,3 +142,18 @@ export interface EmailCenterDTO {
   connectors: EmailConnectorStatusDTO[];
   threads: EmailThreadDTO[];
 }
+
+export interface StageLayoutItemDTO {
+  id: string;
+  label: string;
+  position: number;
+  enabled: boolean;
+  isCustom: boolean;
+}
+
+export interface SaveStageLayoutItemDTO {
+  id: string;
+  label: string;
+  enabled: boolean;
+  isCustom: boolean;
+}

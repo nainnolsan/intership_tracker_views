@@ -87,3 +87,12 @@ export const CONNECT_EMAIL_PROVIDER = gql`
     }
   }
 `;
+
+export const SAVE_STAGE_LAYOUT = gql`
+  mutation SaveStageLayout($layout: [StageLayoutItemInput!]!) {
+    saveInternshipStageLayout(layout: $layout) {
+      success
+      message
+    }
+  }
+`;

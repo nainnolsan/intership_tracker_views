@@ -152,3 +152,15 @@ export const GET_EMAIL_CENTER = gql`
     }
   }
 `;
+
+export const GET_STAGE_LAYOUT = gql`
+  query GetStageLayout {
+    internshipStageLayout {
+      id
+      label
+      position
+      enabled
+      isCustom
+    }
+  }
+`;

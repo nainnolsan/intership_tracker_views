@@ -4,12 +4,10 @@ import MetricCard from '../features/internships/components/MetricCard';
 import PageHeader from '../features/internships/components/PageHeader';
 import SankeyFunnel from '../features/internships/components/SankeyFunnel';
 import PipelineColumn from '../features/internships/components/PipelineColumn';
-import { useDashboardMetrics, useFunnelFlow, useAnalyticsOverview, usePipelineBoard } from '../features/internships/hooks/useInternshipsData';
-import { getSessionProfile } from '../auth/session';
-import type { ApplicationDTO } from '../types/internships';
+import { useDashboardMetrics, useFunnelFlow, useAnalyticsOverview, usePipelineBoard, useSaveStageLayout, useStageLayout } from '../features/internships/hooks/useInternshipsData';
+import type { ApplicationDTO, SaveStageLayoutItemDTO } from '../types/internships';
 
 const DASHBOARD_METRIC_COLORS_STORAGE_KEY = 'dashboardMetricColors';
-const STAGE_LAYOUT_STORAGE_KEY = 'dashboardStageLayout';
 
 type MetricKey = 'applied' | 'oa' | 'interviews' | 'offers' | 'rejected' | 'conversion';
 
@@ -52,46 +50,17 @@ interface StageLayoutItem {
 
 const sanitizeStageId = (value: string): string => value.trim().replace(/\s+/g, ' ');
 
-const buildStageLayoutStorageKey = (email?: string): string =>
-  `${STAGE_LAYOUT_STORAGE_KEY}:${(email ?? 'anonymous').toLowerCase()}`;
-
-const readStoredStageLayout = (storageKey: string): StageLayoutItem[] => {
-  if (typeof window === 'undefined') {
-    return [];
-  }
-
-  const raw = localStorage.getItem(storageKey);
-  if (!raw) {
-    return [];
-  }
-
-  try {
-    const parsed = JSON.parse(raw) as StageLayoutItem[];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-};
-
-const writeStageLayout = (storageKey: string, value: StageLayoutItem[]): void => {
-  localStorage.setItem(storageKey, JSON.stringify(value));
-};
-
 export default function DashboardPage() {
-  const sessionProfile = useMemo(() => getSessionProfile(), []);
-  const stageLayoutStorageKey = useMemo(
-    () => buildStageLayoutStorageKey(sessionProfile.email),
-    [sessionProfile.email],
-  );
-
   const [metricColors, setMetricColors] = useState<Record<MetricKey, string>>(readStoredMetricColors);
-  const [stageLayout, setStageLayout] = useState<StageLayoutItem[]>(() => readStoredStageLayout(stageLayoutStorageKey));
+  const [stageLayout, setStageLayout] = useState<StageLayoutItem[]>([]);
   const [newStageName, setNewStageName] = useState('');
 
   const metricsQuery = useDashboardMetrics();
   const funnelQuery = useFunnelFlow();
   const analyticsQuery = useAnalyticsOverview();
   const pipelineQuery = usePipelineBoard();
+  const stageLayoutQuery = useStageLayout();
+  const saveStageLayoutMutation = useSaveStageLayout();
 
   const metrics = metricsQuery.data;
   const analyticsData = analyticsQuery.data;
@@ -107,43 +76,64 @@ export default function DashboardPage() {
     });
   };
 
+  const persistStageLayout = async (next: StageLayoutItem[]) => {
+    setStageLayout(next);
+
+    const payload: SaveStageLayoutItemDTO[] = next.map((item) => ({
+      id: item.id,
+      label: item.label,
+      enabled: item.enabled,
+      isCustom: item.isCustom,
+    }));
+
+    try {
+      await saveStageLayoutMutation.mutateAsync(payload);
+    } catch {
+      // Keep optimistic state; next successful save will sync backend.
+    }
+  };
+
   useEffect(() => {
     const columns = pipelineQuery.data ?? [];
     if (columns.length === 0) {
       return;
     }
 
-    setStageLayout((previous) => {
-      const base = previous.length > 0
-        ? [...previous]
-        : columns.map((column) => ({
-            id: column.stage,
-            label: column.stage,
-            enabled: true,
-            isCustom: false,
-          }));
+    const fromServer = stageLayoutQuery.data;
+    const base = (fromServer && fromServer.length > 0)
+      ? [...fromServer]
+          .sort((a, b) => a.position - b.position)
+          .map((item) => ({
+            id: item.id,
+            label: item.label,
+            enabled: item.enabled,
+            isCustom: item.isCustom,
+          }))
+      : columns.map((column) => ({
+          id: column.stage,
+          label: column.stage,
+          enabled: true,
+          isCustom: false,
+        }));
 
-      const knownIds = new Set(base.map((item) => item.id));
-      for (const column of columns) {
-        if (!knownIds.has(column.stage)) {
-          base.push({
-            id: column.stage,
-            label: column.stage,
-            enabled: true,
-            isCustom: false,
-          });
-        }
+    const knownIds = new Set(base.map((item) => item.id));
+    for (const column of columns) {
+      if (!knownIds.has(column.stage)) {
+        base.push({
+          id: column.stage,
+          label: column.stage,
+          enabled: true,
+          isCustom: false,
+        });
       }
+    }
 
-      writeStageLayout(stageLayoutStorageKey, base);
-      return base;
-    });
-  }, [pipelineQuery.data, stageLayoutStorageKey]);
+    setStageLayout(base);
 
-  const updateStageLayout = (next: StageLayoutItem[]) => {
-    setStageLayout(next);
-    writeStageLayout(stageLayoutStorageKey, next);
-  };
+    if (!fromServer || fromServer.length === 0) {
+      void persistStageLayout(base);
+    }
+  }, [pipelineQuery.data, stageLayoutQuery.data]);
 
   const toggleStage = (id: string) => {
     const current = stageLayout.find((item) => item.id === id);
@@ -156,7 +146,7 @@ export default function DashboardPage() {
       return;
     }
 
-    updateStageLayout(
+    void persistStageLayout(
       stageLayout.map((item) => (item.id === id ? { ...item, enabled: !item.enabled } : item)),
     );
   };
@@ -180,7 +170,7 @@ export default function DashboardPage() {
     const next = [...stageLayout];
     const [item] = next.splice(fromIndex, 1);
     next.splice(toIndex, 0, item);
-    updateStageLayout(next);
+    void persistStageLayout(next);
   };
 
   const removeStage = (id: string) => {
@@ -193,7 +183,7 @@ export default function DashboardPage() {
       return;
     }
 
-    updateStageLayout(stageLayout.filter((item) => item.id !== id));
+    void persistStageLayout(stageLayout.filter((item) => item.id !== id));
   };
 
   const addStage = () => {
@@ -220,7 +210,7 @@ export default function DashboardPage() {
         isCustom: true,
       },
     ];
-    updateStageLayout(next);
+    void persistStageLayout(next);
     setNewStageName('');
   };
 
