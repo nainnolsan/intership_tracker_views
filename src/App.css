@@ -260,6 +260,17 @@
   color: var(--metric-solid-ink);
 }
 
+.metric-card-transparent {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.metric-card-transparent .metric-label,
+.metric-card-transparent .metric-value {
+  color: var(--ink);
+}
+
 .metric-color-menu {
   position: absolute;
   top: 0.45rem;
@@ -267,16 +278,21 @@
 }
 
 .metric-color-trigger {
-  border: 1px solid color-mix(in srgb, var(--metric-solid-ink) 35%, transparent);
-  background: color-mix(in srgb, var(--metric-solid-ink) 14%, transparent);
+  border: 0;
+  background: transparent;
   color: var(--metric-solid-ink);
-  border-radius: 9px;
+  border-radius: 999px;
   min-width: 28px;
   height: 28px;
   display: grid;
   place-items: center;
   line-height: 1;
   cursor: pointer;
+  padding: 0;
+}
+
+.metric-color-trigger:hover {
+  opacity: 0.8;
 }
 
 .metric-color-popover {
@@ -506,6 +522,73 @@ textarea:focus {
   grid-template-columns: repeat(5, minmax(190px, 1fr));
   gap: 0.8rem;
   overflow: auto;
+}
+
+.stage-manager {
+  margin-top: 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--paper) 90%, transparent);
+  padding: 0.8rem;
+}
+
+.stage-manager h3 {
+  font-size: 1rem;
+}
+
+.stage-manager p {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.stage-manager-list {
+  margin-top: 0.7rem;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.stage-manager-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.45rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.5rem 0.6rem;
+}
+
+.stage-manager-row small {
+  color: var(--muted);
+}
+
+.stage-manager-actions {
+  display: inline-flex;
+  gap: 0.3rem;
+}
+
+.stage-manager-actions button {
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--paper) 92%, transparent);
+  color: var(--ink);
+  border-radius: 8px;
+  min-width: 30px;
+  height: 30px;
+  cursor: pointer;
+}
+
+.stage-manager-add {
+  margin-top: 0.8rem;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.45rem;
+}
+
+.stage-manager-add input {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+  color: var(--ink);
+  padding: 0.55rem 0.65rem;
 }
 
 .pipeline-column {

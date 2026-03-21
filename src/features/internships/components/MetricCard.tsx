@@ -6,6 +6,7 @@ interface MetricCardProps {
   value: string | number;
   color: string;
   onColorChange?: (value: string) => void;
+  transparent?: boolean;
 }
 
 const PRESET_COLORS = [
@@ -41,7 +42,7 @@ const getTextColor = (hex: string): string => {
   return brightness > 160 ? '#111111' : '#ffffff';
 };
 
-export default function MetricCard({ label, value, color, onColorChange }: MetricCardProps) {
+export default function MetricCard({ label, value, color, onColorChange, transparent = false }: MetricCardProps) {
   const normalizedColor = color.toLowerCase();
   const isPresetColor = PRESET_COLORS.includes(normalizedColor);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -93,48 +94,46 @@ export default function MetricCard({ label, value, color, onColorChange }: Metri
   }, [menuOpen]);
 
   return (
-    <article className="metric-card metric-card-solid" style={cardStyle}>
-      <details
-        ref={detailsRef}
-        className="metric-color-menu"
-        onToggle={(event) => setMenuOpen((event.currentTarget as HTMLDetailsElement).open)}
-      >
-        {onColorChange ? (
-          <>
-            <summary className="metric-color-trigger" aria-label={`Customize ${label} color`}>
-              ...
-            </summary>
-            <div className="metric-color-popover">
-              <p>{label}</p>
-              <div className="color-preset-row">
-                {PRESET_COLORS.map((preset) => (
-                  <button
-                    key={preset}
-                    type="button"
-                    className={`color-swatch ${normalizedColor === preset ? 'active' : ''}`}
-                    style={{ backgroundColor: preset }}
-                    onClick={() => onColorChange(preset)}
-                    aria-label={`Select color ${preset}`}
-                  />
-                ))}
+    <article className={`metric-card ${transparent ? 'metric-card-transparent' : 'metric-card-solid'}`} style={cardStyle}>
+      {onColorChange ? (
+        <details
+          ref={detailsRef}
+          className="metric-color-menu"
+          onToggle={(event) => setMenuOpen((event.currentTarget as HTMLDetailsElement).open)}
+        >
+          <summary className="metric-color-trigger" aria-label={`Customize ${label} color`}>
+            ...
+          </summary>
+          <div className="metric-color-popover">
+            <p>{label}</p>
+            <div className="color-preset-row">
+              {PRESET_COLORS.map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  className={`color-swatch ${normalizedColor === preset ? 'active' : ''}`}
+                  style={{ backgroundColor: preset }}
+                  onClick={() => onColorChange(preset)}
+                  aria-label={`Select color ${preset}`}
+                />
+              ))}
 
-                <label
-                  className={`color-swatch custom-color-swatch ${!isPresetColor ? 'active' : ''}`}
-                  style={{ backgroundColor: color }}
-                  aria-label={`Select custom color for ${label}`}
-                >
-                  <input
-                    type="color"
-                    value={color}
-                    onChange={(event) => onColorChange(event.target.value)}
-                  />
-                </label>
-              </div>
-              <p className="color-picker-label">Custom color</p>
+              <label
+                className={`color-swatch custom-color-swatch ${!isPresetColor ? 'active' : ''}`}
+                style={{ backgroundColor: color }}
+                aria-label={`Select custom color for ${label}`}
+              >
+                <input
+                  type="color"
+                  value={color}
+                  onChange={(event) => onColorChange(event.target.value)}
+                />
+              </label>
             </div>
-          </>
-        ) : null}
-      </details>
+            <p className="color-picker-label">Custom color</p>
+          </div>
+        </details>
+      ) : null}
       <p className="metric-label">{label}</p>
       <p className="metric-value">{value}</p>
     </article>

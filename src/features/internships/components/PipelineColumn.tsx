@@ -1,16 +1,25 @@
 import { stageClassName, stageLabels } from '../constants/stageMeta';
-import type { PipelineColumnDTO } from '../../../types/internships';
+import type { ApplicationDTO, ApplicationStage } from '../../../types/internships';
 
 interface PipelineColumnProps {
-  column: PipelineColumnDTO;
+  column: {
+    stage: string;
+    total: number;
+    applications: ApplicationDTO[];
+  };
+  label?: string;
 }
 
-export default function PipelineColumn({ column }: PipelineColumnProps) {
+export default function PipelineColumn({ column, label }: PipelineColumnProps) {
+  const stageKey = column.stage as ApplicationStage;
+  const stageLabel = label ?? stageLabels[stageKey] ?? column.stage;
+  const stageChipClass = stageClassName[stageKey] ?? 'chip';
+
   return (
     <section className="pipeline-column">
       <header>
-        <h3>{stageLabels[column.stage]}</h3>
-        <span className={stageClassName[column.stage]}>{column.total}</span>
+        <h3>{stageLabel}</h3>
+        <span className={stageChipClass}>{column.total}</span>
       </header>
       <div className="pipeline-list">
         {column.applications.map((application) => (
