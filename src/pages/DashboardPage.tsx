@@ -1,5 +1,22 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import type { DragEndEvent } from '@dnd-kit/core';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import MetricCard from '../features/internships/components/MetricCard';
 import PageHeader from '../features/internships/components/PageHeader';
 import SankeyFunnel from '../features/internships/components/SankeyFunnel';
@@ -50,10 +67,125 @@ interface StageLayoutItem {
 
 const sanitizeStageId = (value: string): string => value.trim().replace(/\s+/g, ' ');
 
+function SortableStageItem({
+  item,
+  onToggle,
+  onRemove,
+  onRename
+}: {
+  item: StageLayoutItem;
+  onToggle: (id: string) => void;
+  onRemove: (id: string) => void;
+  onRename: (id: string, newLabel: string) => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ id: item.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 1 : 0,
+    position: isDragging ? ('relative' as const) : undefined,
+  };
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState(item.label);
+
+  const handleRename = () => {
+    if (editValue.trim() && editValue.trim() !== item.label) {
+      onRename(item.id, editValue.trim());
+    } else {
+      setEditValue(item.label);
+    }
+    setIsEditing(false);
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className={`stage-manager-row ${isDragging ? 'dragging' : ''}`}>
+      <button type="button" className="drag-handle" {...attributes} {...listeners} aria-label="Drag handle">
+        <svg viewBox="0 0 20 20" width="16" height="16" fill="currentColor">
+          <path d="M7 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 2zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 14zm6-8a2 2 0 1 0-.001-4.001A2 2 0 0 0 13 6zm0 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 14z" />
+        </svg>
+      </button>
+
+      <div className="stage-manager-row-content">
+        {isEditing ? (
+          <input
+            autoFocus
+            className="inline-edit-input"
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            onBlur={handleRename}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleRename();
+              if (e.key === 'Escape') {
+                setEditValue(item.label);
+                setIsEditing(false);
+              }
+            }}
+          />
+        ) : (
+          <div className="stage-label-group" onDoubleClick={() => setIsEditing(true)}>
+            <strong>{item.label}</strong>
+            <button type="button" className="edit-icon-btn" onClick={() => setIsEditing(true)} aria-label="Edit name">
+              ✎
+            </button>
+            <small>{item.enabled ? 'Visible' : 'Hidden'}</small>
+          </div>
+        )}
+      </div>
+
+      <div className="stage-manager-actions">
+        <button type="button" onClick={() => onToggle(item.id)} aria-label={`Toggle ${item.label}`}>
+          {item.enabled ? 'Hide' : 'Show'}
+        </button>
+        <button type="button" onClick={() => onRemove(item.id)} aria-label={`Delete ${item.label}`} className="danger-btn">
+          Del
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const [metricColors, setMetricColors] = useState<Record<MetricKey, string>>(readStoredMetricColors);
   const [stageLayout, setStageLayout] = useState<StageLayoutItem[]>([]);
+  const [isAddingStage, setIsAddingStage] = useState(false);
   const [newStageName, setNewStageName] = useState('');
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      setStageLayout((items) => {
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over.id);
+
+        const newItems = arrayMove(items, oldIndex, newIndex);
+        void persistStageLayout(newItems);
+        return newItems;
+      });
+    }
+  };
+
+  const renameStage = (id: string, newLabel: string) => {
+    void persistStageLayout(
+      stageLayout.map((item) => (item.id === id ? { ...item, label: newLabel } : item))
+    );
+  };
 
   const metricsQuery = useDashboardMetrics();
   const funnelQuery = useFunnelFlow();
@@ -151,27 +283,7 @@ export default function DashboardPage() {
     );
   };
 
-  const moveStage = (id: string, direction: -1 | 1) => {
-    const fromIndex = stageLayout.findIndex((item) => item.id === id);
-    if (fromIndex < 0) {
-      return;
-    }
-
-    const toIndex = fromIndex + direction;
-    if (toIndex < 0 || toIndex >= stageLayout.length) {
-      return;
-    }
-
-    const moved = stageLayout[fromIndex];
-    if (!window.confirm(`Are you sure you want to move "${moved.label}" ${direction < 0 ? 'up' : 'down'}?`)) {
-      return;
-    }
-
-    const next = [...stageLayout];
-    const [item] = next.splice(fromIndex, 1);
-    next.splice(toIndex, 0, item);
-    void persistStageLayout(next);
-  };
+  // moveStage removed in favor of drag and drop
 
   const removeStage = (id: string) => {
     const current = stageLayout.find((item) => item.id === id);
@@ -212,6 +324,7 @@ export default function DashboardPage() {
     ];
     void persistStageLayout(next);
     setNewStageName('');
+    setIsAddingStage(false);
   };
 
   const pipelineColumns = useMemo(() => {
@@ -395,46 +508,62 @@ export default function DashboardPage() {
         <h3>Stage Settings</h3>
         <p>Add, hide, delete, and reorder stages for your own board layout.</p>
 
-        <div className="stage-manager-list">
-          {stageLayout.map((item, index) => (
-            <div key={item.id} className="stage-manager-row">
-              <div>
-                <strong>{item.label}</strong>
-                <small>{item.enabled ? 'Visible' : 'Hidden'}</small>
-              </div>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <div className="stage-manager-list">
+            <SortableContext
+              items={stageLayout.map((i) => i.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              {stageLayout.map((item) => (
+                <SortableStageItem 
+                  key={item.id} 
+                  item={item} 
+                  onToggle={toggleStage} 
+                  onRemove={removeStage} 
+                  onRename={renameStage}
+                />
+              ))}
+            </SortableContext>
 
-              <div className="stage-manager-actions">
-                <button type="button" onClick={() => moveStage(item.id, -1)} disabled={index === 0} aria-label={`Move ${item.label} up`}>
-                  ↑
-                </button>
-                <button
-                  type="button"
-                  onClick={() => moveStage(item.id, 1)}
-                  disabled={index === stageLayout.length - 1}
-                  aria-label={`Move ${item.label} down`}
-                >
-                  ↓
-                </button>
-                <button type="button" onClick={() => toggleStage(item.id)} aria-label={`Toggle ${item.label}`}>
-                  {item.enabled ? 'Hide' : 'Show'}
-                </button>
-                <button type="button" onClick={() => removeStage(item.id)} aria-label={`Delete ${item.label}`}>
-                  Del
-                </button>
+            {isAddingStage ? (
+              <div className="stage-manager-row inline-add-row" style={{ gridTemplateColumns: 'auto 1fr auto' }}>
+                <div style={{ width: '25px' }}></div>
+                <div className="stage-manager-row-content">
+                  <input
+                    autoFocus
+                    className="inline-edit-input"
+                    value={newStageName}
+                    onChange={(e) => setNewStageName(e.target.value)}
+                    placeholder="Type new stage name..."
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') addStage();
+                      if (e.key === 'Escape') setIsAddingStage(false);
+                    }}
+                    onBlur={() => {
+                      if(newStageName.trim() !== '') addStage();
+                      else setIsAddingStage(false);
+                    }}
+                  />
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="stage-manager-add">
-          <input
-            type="text"
-            value={newStageName}
-            onChange={(event) => setNewStageName(event.target.value)}
-            placeholder="New stage name"
-          />
-          <button type="button" className="btn" onClick={addStage}>Add Stage</button>
-        </div>
+            ) : (
+              <button 
+                type="button" 
+                className="add-stage-trigger-btn" 
+                onClick={() => setIsAddingStage(true)}
+              >
+                <svg viewBox="0 0 20 20" width="16" height="16" fill="currentColor">
+                  <path d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" />
+                </svg>
+                Add another stage
+              </button>
+            )}
+          </div>
+        </DndContext>
       </div>
 
       <div className="pipeline-board">
