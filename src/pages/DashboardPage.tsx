@@ -13,7 +13,7 @@ import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
+  horizontalListSortingStrategy,
   useSortable
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -26,7 +26,7 @@ import type { ApplicationDTO, SaveStageLayoutItemDTO } from '../types/internship
 
 const DASHBOARD_METRIC_COLORS_STORAGE_KEY = 'dashboardMetricColors';
 
-type MetricKey = 'applied' | 'oa' | 'interviews' | 'offers' | 'rejected' | 'conversion';
+type MetricKey = string;
 
 const DEFAULT_METRIC_COLORS: Record<MetricKey, string> = {
   applied: '#1e3a8a',
@@ -49,10 +49,11 @@ const readStoredMetricColors = (): Record<MetricKey, string> => {
 
   try {
     const parsed = JSON.parse(stored) as Partial<Record<MetricKey, string>>;
-    return {
-      ...DEFAULT_METRIC_COLORS,
-      ...parsed,
-    };
+    const result = { ...DEFAULT_METRIC_COLORS };
+    for (const [k, v] of Object.entries(parsed)) {
+      if (v) result[k] = v;
+    }
+    return result;
   } catch {
     return DEFAULT_METRIC_COLORS;
   }
@@ -67,17 +68,7 @@ interface StageLayoutItem {
 
 const sanitizeStageId = (value: string): string => value.trim().replace(/\s+/g, ' ');
 
-function SortableStageItem({
-  item,
-  onToggle,
-  onRemove,
-  onRename
-}: {
-  item: StageLayoutItem;
-  onToggle: (id: string) => void;
-  onRemove: (id: string) => void;
-  onRename: (id: string, newLabel: string) => void;
-}) {
+function SortableMetricWrapper({ id, children }: { id: string; children: React.ReactNode }) {
   const {
     attributes,
     listeners,
@@ -85,82 +76,35 @@ function SortableStageItem({
     transform,
     transition,
     isDragging
-  } = useSortable({ id: item.id });
+  } = useSortable({ id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    zIndex: isDragging ? 1 : 0,
-    position: isDragging ? ('relative' as const) : undefined,
-  };
-
-  const [isEditing, setIsEditing] = useState(false);
-  const [editValue, setEditValue] = useState(item.label);
-
-  const handleRename = () => {
-    if (editValue.trim() && editValue.trim() !== item.label) {
-      onRename(item.id, editValue.trim());
-    } else {
-      setEditValue(item.label);
-    }
-    setIsEditing(false);
+    zIndex: isDragging ? 10 : 0,
+    opacity: isDragging ? 0.8 : 1,
+    cursor: isDragging ? 'grabbing' : 'grab',
   };
 
   return (
-    <div ref={setNodeRef} style={style} className={`stage-manager-row ${isDragging ? 'dragging' : ''}`}>
-      <button type="button" className="drag-handle" {...attributes} {...listeners} aria-label="Drag handle">
-        <svg viewBox="0 0 20 20" width="16" height="16" fill="currentColor">
-          <path d="M7 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 2zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 7 14zm6-8a2 2 0 1 0-.001-4.001A2 2 0 0 0 13 6zm0 2a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 8zm0 6a2 2 0 1 0 .001 4.001A2 2 0 0 0 13 14z" />
-        </svg>
-      </button>
-
-      <div className="stage-manager-row-content">
-        {isEditing ? (
-          <input
-            autoFocus
-            className="inline-edit-input"
-            value={editValue}
-            onChange={(e) => setEditValue(e.target.value)}
-            onBlur={handleRename}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') handleRename();
-              if (e.key === 'Escape') {
-                setEditValue(item.label);
-                setIsEditing(false);
-              }
-            }}
-          />
-        ) : (
-          <div className="stage-label-group" onDoubleClick={() => setIsEditing(true)}>
-            <strong>{item.label}</strong>
-            <button type="button" className="edit-icon-btn" onClick={() => setIsEditing(true)} aria-label="Edit name">
-              ✎
-            </button>
-            <small>{item.enabled ? 'Visible' : 'Hidden'}</small>
-          </div>
-        )}
-      </div>
-
-      <div className="stage-manager-actions">
-        <button type="button" onClick={() => onToggle(item.id)} aria-label={`Toggle ${item.label}`}>
-          {item.enabled ? 'Hide' : 'Show'}
-        </button>
-        <button type="button" onClick={() => onRemove(item.id)} aria-label={`Delete ${item.label}`} className="danger-btn">
-          Del
-        </button>
-      </div>
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      {children}
     </div>
   );
 }
 
 export default function DashboardPage() {
-  const [metricColors, setMetricColors] = useState<Record<MetricKey, string>>(readStoredMetricColors);
+  const [metricColors, setMetricColors] = useState<Record<MetricKey, string | undefined>>(readStoredMetricColors);
   const [stageLayout, setStageLayout] = useState<StageLayoutItem[]>([]);
   const [isAddingStage, setIsAddingStage] = useState(false);
   const [newStageName, setNewStageName] = useState('');
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
@@ -267,21 +211,7 @@ export default function DashboardPage() {
     }
   }, [pipelineQuery.data, stageLayoutQuery.data]);
 
-  const toggleStage = (id: string) => {
-    const current = stageLayout.find((item) => item.id === id);
-    if (!current) {
-      return;
-    }
-
-    const actionLabel = current.enabled ? 'hide' : 'show';
-    if (!window.confirm(`Are you sure you want to ${actionLabel} stage "${current.label}"?`)) {
-      return;
-    }
-
-    void persistStageLayout(
-      stageLayout.map((item) => (item.id === id ? { ...item, enabled: !item.enabled } : item)),
-    );
-  };
+  // toggleStage removed since stages are controlled directly
 
   // moveStage removed in favor of drag and drop
 
@@ -369,37 +299,81 @@ export default function DashboardPage() {
         subtitle="Track your internship and job pipeline performance in one place."
       />
 
-      <div className="metric-grid">
+      <div className="metric-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))' }}>
         <MetricCard
           label="Total Applied"
           value={metrics?.totalApplied ?? '-'}
-          color={metricColors.applied}
+          color={metricColors.applied ?? '#1e3a8a'}
           onColorChange={(color) => updateMetricColor('applied', color)}
         />
-        <MetricCard
-          label="OA"
-          value={metrics?.totalOnlineAssessments ?? '-'}
-          color={metricColors.oa}
-          onColorChange={(color) => updateMetricColor('oa', color)}
-        />
-        <MetricCard
-          label="Interviews"
-          value={metrics?.totalInterviews ?? '-'}
-          color={metricColors.interviews}
-          onColorChange={(color) => updateMetricColor('interviews', color)}
-        />
-        <MetricCard
-          label="Offers"
-          value={metrics?.totalOffers ?? '-'}
-          color={metricColors.offers}
-          onColorChange={(color) => updateMetricColor('offers', color)}
-        />
-        <MetricCard
-          label="Rejected"
-          value={metrics?.totalRejected ?? '-'}
-          color={metricColors.rejected}
-          onColorChange={(color) => updateMetricColor('rejected', color)}
-        />
+
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={pipelineColumns.map((c) => c.stage)}
+            strategy={horizontalListSortingStrategy}
+          >
+            {pipelineColumns.map((column) => (
+              <SortableMetricWrapper key={column.stage} id={column.stage}>
+                <MetricCard
+                  label={column.label}
+                  value={column.total}
+                  color={metricColors[column.stage] ?? metricColors[column.stage.toLowerCase()] ?? '#6451a8'}
+                  onColorChange={(color) => updateMetricColor(column.stage, color)}
+                  onRename={(newName) => renameStage(column.stage, newName)}
+                  onDelete={() => removeStage(column.stage)}
+                />
+              </SortableMetricWrapper>
+            ))}
+          </SortableContext>
+        </DndContext>
+
+        {isAddingStage ? (
+          <article className="metric-card metric-card-solid new-stage-card" style={{ '--metric-solid-bg': 'transparent', '--metric-solid-ink': 'var(--ink)', border: '1px dashed var(--line-strong)' } as any}>
+            <input
+              autoFocus
+              className="inline-edit-input"
+              value={newStageName}
+              onChange={(e) => setNewStageName(e.target.value)}
+              placeholder="New stage..."
+              style={{ background: 'var(--paper)', fontSize: '0.9rem', width: '100%', marginBottom: '10px' }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') addStage();
+                if (e.key === 'Escape') setIsAddingStage(false);
+              }}
+              onBlur={() => {
+                if(newStageName.trim() !== '') addStage();
+                else setIsAddingStage(false);
+              }}
+            />
+          </article>
+        ) : (
+          <button 
+            type="button" 
+            className="metric-card add-metric-btn" 
+            onClick={() => setIsAddingStage(true)}
+            style={{ 
+              background: 'transparent', 
+              border: '1px dashed var(--line)', 
+              color: 'var(--muted)', 
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              lineHeight: 1,
+              transition: 'all 0.2s',
+              fontWeight: 500
+            }}
+            onMouseOver={(e) => { e.currentTarget.style.borderColor = 'var(--ink)'; e.currentTarget.style.color = 'var(--ink)'; }}
+            onMouseOut={(e) => { e.currentTarget.style.borderColor = 'var(--line)'; e.currentTarget.style.color = 'var(--muted)'; }}
+          >
+             + Add Stage
+          </button>
+        )}
+
         <MetricCard
           label="Conversion Rate"
           value={metrics ? `${metrics.conversionRate.toFixed(2)}%` : '-'}
@@ -414,11 +388,11 @@ export default function DashboardPage() {
         <SankeyFunnel
           data={funnelQuery.data}
           stageColors={{
-            applied: metricColors.applied,
-            oa: metricColors.oa,
-            interview: metricColors.interviews,
-            offer: metricColors.offers,
-            rejected: metricColors.rejected,
+            applied: metricColors.applied ?? '#1e3a8a',
+            oa: metricColors.oa ?? '#0f766e',
+            interview: metricColors.interviews ?? '#6d28d9',
+            offer: metricColors.offers ?? '#166534',
+            rejected: metricColors.rejected ?? '#991b1b',
           }}
         />
       )}
@@ -504,67 +478,7 @@ export default function DashboardPage() {
       </div>
 
       <h2 style={{ marginTop: '2rem', marginBottom: '1rem', fontSize: '1.875rem', fontWeight: 'bold', color: 'var(--ink)' }}>Pipeline Board</h2>
-      <div className="stage-manager">
-        <h3>Stage Settings</h3>
-        <p>Add, hide, delete, and reorder stages for your own board layout.</p>
-
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-        >
-          <div className="stage-manager-list">
-            <SortableContext
-              items={stageLayout.map((i) => i.id)}
-              strategy={verticalListSortingStrategy}
-            >
-              {stageLayout.map((item) => (
-                <SortableStageItem 
-                  key={item.id} 
-                  item={item} 
-                  onToggle={toggleStage} 
-                  onRemove={removeStage} 
-                  onRename={renameStage}
-                />
-              ))}
-            </SortableContext>
-
-            {isAddingStage ? (
-              <div className="stage-manager-row inline-add-row" style={{ gridTemplateColumns: 'auto 1fr auto' }}>
-                <div style={{ width: '25px' }}></div>
-                <div className="stage-manager-row-content">
-                  <input
-                    autoFocus
-                    className="inline-edit-input"
-                    value={newStageName}
-                    onChange={(e) => setNewStageName(e.target.value)}
-                    placeholder="Type new stage name..."
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') addStage();
-                      if (e.key === 'Escape') setIsAddingStage(false);
-                    }}
-                    onBlur={() => {
-                      if(newStageName.trim() !== '') addStage();
-                      else setIsAddingStage(false);
-                    }}
-                  />
-                </div>
-              </div>
-            ) : (
-              <button 
-                type="button" 
-                className="add-stage-trigger-btn" 
-                onClick={() => setIsAddingStage(true)}
-              >
-                <svg viewBox="0 0 20 20" width="16" height="16" fill="currentColor">
-                  <path d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" />
-                </svg>
-                Add another stage
-              </button>
-            )}
-          </div>
-        </DndContext>
-      </div>
+      {/* Old stage manager list removed */}
 
       <div className="pipeline-board">
         {pipelineColumns.map((column) => (

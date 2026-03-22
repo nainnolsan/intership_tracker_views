@@ -6,6 +6,8 @@ interface MetricCardProps {
   value: string | number;
   color: string;
   onColorChange?: (value: string) => void;
+  onRename?: (newLabel: string) => void;
+  onDelete?: () => void;
   transparent?: boolean;
 }
 
@@ -42,10 +44,12 @@ const getTextColor = (hex: string): string => {
   return brightness > 160 ? '#111111' : '#ffffff';
 };
 
-export default function MetricCard({ label, value, color, onColorChange, transparent = false }: MetricCardProps) {
+export default function MetricCard({ label, value, color, onColorChange, onRename, onDelete, transparent = false }: MetricCardProps) {
   const normalizedColor = color.toLowerCase();
   const isPresetColor = PRESET_COLORS.includes(normalizedColor);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState(label);
   const detailsRef = useRef<HTMLDetailsElement | null>(null);
   const textColor = useMemo(() => getTextColor(color), [color]);
   const cardStyle = useMemo(
@@ -105,7 +109,45 @@ export default function MetricCard({ label, value, color, onColorChange, transpa
             ...
           </summary>
           <div className="metric-color-popover">
-            <p>{label}</p>
+            <div className="metric-popover-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              {isRenaming && onRename ? (
+                <input
+                  autoFocus
+                  className="inline-edit-input"
+                  style={{ fontSize: '0.9rem', padding: '2px 4px', width: '140px' }}
+                  value={renameValue}
+                  onChange={(e) => setRenameValue(e.target.value)}
+                  onBlur={() => {
+                    if (renameValue.trim() && renameValue.trim() !== label) {
+                         onRename(renameValue.trim());
+                    } else {
+                         setRenameValue(label);
+                    }
+                    setIsRenaming(false);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      if (renameValue.trim() && renameValue.trim() !== label) onRename(renameValue.trim());
+                      else setRenameValue(label);
+                      setIsRenaming(false);
+                    }
+                    if (e.key === 'Escape') {
+                         setRenameValue(label);
+                         setIsRenaming(false);
+                    }
+                  }}
+                />
+              ) : (
+                <p style={{ margin: 0, fontWeight: 'bold' }}>{label}</p>
+              )}
+              {onRename && !isRenaming && (
+                <button type="button" className="edit-icon-btn" style={{ opacity: 1 }} onClick={() => setIsRenaming(true)}>
+                  ✎
+                </button>
+              )}
+            </div>
+            
+            {!!onColorChange && (
             <div className="color-preset-row">
               {PRESET_COLORS.map((preset) => (
                 <button
@@ -130,7 +172,22 @@ export default function MetricCard({ label, value, color, onColorChange, transpa
                 />
               </label>
             </div>
-            <p className="color-picker-label">Custom color</p>
+            )}
+            {!!onColorChange && <p className="color-picker-label">Custom color</p>}
+            
+            {onDelete && (
+              <button 
+                type="button" 
+                className="danger-btn" 
+                style={{ width: '100%', padding: '6px', background: 'transparent', border: '1px solid var(--line)', borderRadius: '6px', cursor: 'pointer', marginTop: '4px' }}
+                onClick={() => {
+                  setMenuOpen(false);
+                  onDelete();
+                }}
+              >
+                🗑️ Delete Stage
+              </button>
+            )}
           </div>
         </details>
       ) : null}
