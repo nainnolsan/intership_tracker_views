@@ -37,6 +37,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const hasPreference = localStorage.getItem('hasUserPreference') === 'true';
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setUserPreference(hasPreference);
 
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -71,6 +72,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   return <ThemeContext.Provider value={{ theme, toggleTheme }}>{children}</ThemeContext.Provider>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useTheme() {
   const context = useContext(ThemeContext);
   if (!context) {

@@ -208,6 +208,7 @@ export default function DashboardPage() {
     if (!fromServer || fromServer.length === 0) {
       void persistStageLayout(base);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pipelineQuery.data, stageLayoutQuery.data]);
 
   // toggleStage removed since stages are controlled directly
@@ -343,7 +344,7 @@ export default function DashboardPage() {
         </DndContext>
 
         {isAddingStage ? (
-          <article className="metric-card metric-card-solid new-stage-card" style={{ '--metric-solid-bg': 'transparent', '--metric-solid-ink': 'var(--ink)', border: '1px dashed var(--line-strong)' } as any}>
+          <article className="metric-card metric-card-solid new-stage-card" style={{ '--metric-solid-bg': 'transparent', '--metric-solid-ink': 'var(--ink)', border: '1px dashed var(--line-strong)' } as React.CSSProperties}>
             <input
               autoFocus
               className="inline-edit-input"

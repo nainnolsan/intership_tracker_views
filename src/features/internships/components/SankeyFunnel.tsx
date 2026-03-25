@@ -27,10 +27,10 @@ function pickNodeColor(
 ): string {
   const name = (nodeName ?? '').toLowerCase();
 
-  if (name.includes('onlineassessment')) return stageColors.oa;
-  if (name.includes('interview') && !name.includes('rejected')) return stageColors.interview;
-  if (name.includes('offer')) return stageColors.offer;
   if (name.includes('rejected')) return stageColors.rejected;
+  if (name.includes('onlineassessment') || name === 'oa') return stageColors.oa;
+  if (name.includes('interview')) return stageColors.interview;
+  if (name.includes('offer')) return stageColors.offer;
   if (name.includes('applied')) return stageColors.applied;
 
   const fallback = [
@@ -206,10 +206,11 @@ export default function SankeyFunnel({ data, stageColors, stageOrder }: SankeyFu
 
   const verticalUnit = innerHeight / totalApplied;
 
-  const maxLevel = processedNodes.reduce((max, node) => {
+  const maxLevel = processedNodes.reduce((max, node, idx) => {
+    if (!activeNodeIndices.has(idx)) return max;
     const lvl = node.isDropOff ? node.dropLevel : getNodeLevel(node.name, stageOrder);
     return Math.max(max, lvl);
-  }, stageOrder ? stageOrder.length : 3);
+  }, 1);
   
   const columnWidth = (viewWidth - 88) / Math.max(1, maxLevel);
   const getColumnX = (lvl: number) => 44 + lvl * columnWidth;

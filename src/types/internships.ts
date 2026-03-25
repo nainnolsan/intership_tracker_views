@@ -78,7 +78,7 @@ export interface CreateApplicationDTO {
   contactEmail?: string;
 }
 
-export interface UpdateApplicationDTO extends Partial<CreateApplicationDTO> {}
+export type UpdateApplicationDTO = Partial<CreateApplicationDTO>;
 
 export interface AddStageEventDTO {
   toStage: ApplicationStage;
