@@ -9,6 +9,7 @@ interface SankeyFunnelProps {
     offer: string;
     rejected: string;
   };
+  stageOrder?: string[];
 }
 
 interface SankeyNodeShapeProps {
@@ -95,14 +96,33 @@ type LayoutLink = {
   color: string;
 };
 
-function getNodeLevel(nodeName: string): number {
+function getNodeLevel(nodeName: string, stageOrder?: string[]): number {
   const n = nodeName.toLowerCase();
   if (n.includes('applied') && !n.includes('rejected')) return 0;
-  if (n.includes('onlineassessment')) return 1;
+
+  if (stageOrder && stageOrder.length > 0) {
+    let searchName = n;
+    if (n.includes('rejected') && n !== 'rejected') {
+      searchName = n.replace('rejected', '').replace('-', '').trim();
+    }
+    
+    for (let i = 0; i < stageOrder.length; i++) {
+       const stageId = stageOrder[i].toLowerCase();
+       if (searchName.includes(stageId) || stageId.includes(searchName)) {
+           return i + 1;
+       }
+       if ((searchName === 'oa' && stageId === 'onlineassessment') || 
+           (stageId === 'oa' && searchName === 'onlineassessment')) {
+           return i + 1;
+       }
+    }
+  }
+
+  if (n.includes('onlineassessment') || n === 'oa') return 1;
   if (n.includes('interview') && !n.includes('rejected')) return 2;
   if (n.includes('offer')) return 3;
   if (n.includes('rejected') && n.includes('applied')) return 1;
-  if (n.includes('rejected') && n.includes('oa')) return 2;
+  if (n.includes('rejected') && (n.includes('oa') || n.includes('onlineassessment'))) return 2;
   if (n.includes('rejected') && n.includes('interview')) return 3;
   return 0;
 }
@@ -119,7 +139,7 @@ function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
-export default function SankeyFunnel({ data, stageColors }: SankeyFunnelProps) {
+export default function SankeyFunnel({ data, stageColors, stageOrder }: SankeyFunnelProps) {
   const hasLinks = data.links.some((link) => link.value > 0);
   const chartHeight = Math.max(420, Math.min(640, data.nodes.length * 64));
 
@@ -167,16 +187,18 @@ export default function SankeyFunnel({ data, stageColors }: SankeyFunnelProps) {
 
   const verticalUnit = innerHeight / totalApplied;
 
-  const columnX = [44, 400, 760, 1120];
+  const maxLevel = stageOrder ? stageOrder.length : 3;
+  const columnWidth = (viewWidth - 88) / Math.max(1, maxLevel);
+  const getColumnX = (lvl: number) => 44 + lvl * columnWidth;
 
   const nodes: LayoutNode[] = data.nodes.flatMap((node, idx) => {
     if (!activeNodeIndices.has(idx)) {
       return [];
     }
 
-    const level = getNodeLevel(node.name);
+    const level = getNodeLevel(node.name, stageOrder);
     const height = nodeValues[idx] * verticalUnit;
-    const x = columnX[level] ?? columnX[0];
+    const x = getColumnX(level);
 
     let y = innerTop;
     if (level === 0) {

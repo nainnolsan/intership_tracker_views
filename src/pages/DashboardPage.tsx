@@ -398,6 +398,7 @@ export default function DashboardPage() {
       {funnelQuery.data && (
         <SankeyFunnel
           data={funnelQuery.data}
+          stageOrder={pipelineColumns.map((c) => c.stage)}
           stageColors={{
             applied: metricColors['Applied'] ?? '#1e3a8a',
             oa: metricColors['OnlineAssessment'] ?? '#0f766e',
