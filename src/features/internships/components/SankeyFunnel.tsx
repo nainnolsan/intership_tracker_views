@@ -121,9 +121,9 @@ function getNodeLevel(nodeName: string, stageOrder?: string[]): number {
   if (n.includes('onlineassessment') || n === 'oa') return 1;
   if (n.includes('interview') && !n.includes('rejected')) return 2;
   if (n.includes('offer')) return 3;
-  if (n.includes('rejected') && n.includes('applied')) return 1;
-  if (n.includes('rejected') && (n.includes('oa') || n.includes('onlineassessment'))) return 2;
-  if (n.includes('rejected') && n.includes('interview')) return 3;
+  if (n.includes('rejected')) {
+     return 4;
+  }
   return 0;
 }
 
@@ -163,12 +163,12 @@ export default function SankeyFunnel({ data, stageColors, stageOrder }: SankeyFu
 
   const processedNodes = data.nodes.map((n) => ({ name: n.name, isDropOff: false, dropLevel: 0 }));
   const processedLinks = data.links.map((l) => ({ ...l }));
-  const rejectedNodeIndex = processedNodes.findIndex((n) => isRejectedNode(n.name));
   
-  if (rejectedNodeIndex !== -1) {
-    for (let i = 0; i < processedLinks.length; i++) {
+  for (let i = 0; i < processedLinks.length; i++) {
         const link = processedLinks[i];
-        if (link.target === rejectedNodeIndex && link.value > 0) {
+        const targetNode = processedNodes[link.target];
+        
+        if (targetNode && isRejectedNode(targetNode.name) && link.value > 0) {
             const sourceNode = processedNodes[link.source];
             const dropLevel = getNodeLevel(sourceNode.name, stageOrder) + 1;
             
@@ -178,7 +178,6 @@ export default function SankeyFunnel({ data, stageColors, stageOrder }: SankeyFu
             processedNodes.push({ name: dropName, isDropOff: true, dropLevel });
             processedLinks[i].target = newIndex;
         }
-    }
   }
 
   const nodeValues = processedNodes.map((_, idx) => {
@@ -207,7 +206,11 @@ export default function SankeyFunnel({ data, stageColors, stageOrder }: SankeyFu
 
   const verticalUnit = innerHeight / totalApplied;
 
-  const maxLevel = stageOrder ? stageOrder.length : 3;
+  const maxLevel = processedNodes.reduce((max, node) => {
+    const lvl = node.isDropOff ? node.dropLevel : getNodeLevel(node.name, stageOrder);
+    return Math.max(max, lvl);
+  }, stageOrder ? stageOrder.length : 3);
+  
   const columnWidth = (viewWidth - 88) / Math.max(1, maxLevel);
   const getColumnX = (lvl: number) => 44 + lvl * columnWidth;
 
@@ -216,7 +219,9 @@ export default function SankeyFunnel({ data, stageColors, stageOrder }: SankeyFu
       return [];
     }
 
-    const level = node.isDropOff ? Math.min(node.dropLevel, maxLevel) : getNodeLevel(node.name, stageOrder);
+    let level = node.isDropOff ? node.dropLevel : getNodeLevel(node.name, stageOrder);
+    level = Math.min(level, maxLevel);
+    
     const height = nodeValues[idx] * verticalUnit;
     const x = getColumnX(level);
 
