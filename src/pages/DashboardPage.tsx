@@ -28,13 +28,12 @@ const DASHBOARD_METRIC_COLORS_STORAGE_KEY = 'dashboardMetricColors';
 
 type MetricKey = string;
 
-const DEFAULT_METRIC_COLORS: Record<MetricKey, string> = {
-  applied: '#1e3a8a',
-  oa: '#0f766e',
-  interviews: '#6d28d9',
-  offers: '#166534',
-  rejected: '#991b1b',
-  conversion: '#111111',
+const DEFAULT_METRIC_COLORS: Record<string, string> = {
+  Applied: '#1e3a8a',
+  OnlineAssessment: '#0f766e',
+  Interview: '#6d28d9',
+  Offer: '#166534',
+  Rejected: '#991b1b',
 };
 
 const readStoredMetricColors = (): Record<MetricKey, string> => {
@@ -294,6 +293,18 @@ export default function DashboardPage() {
 
   return (
     <section className="view dashboard-view">
+      {saveStageLayoutMutation.loading && (
+        <div className="modal-backdrop" style={{ zIndex: 9999 }}>
+          <div style={{ width: '3.5rem', height: '3.5rem', border: '0.3em solid color-mix(in srgb, var(--paper) 30%, transparent)', borderTopColor: 'var(--brand)', borderRadius: '50%', animation: 'spinner-border .7s linear infinite' }} role="status">
+            <span className="visually-hidden" style={{ opacity: 0 }}>Loading...</span>
+          </div>
+        </div>
+      )}
+      <style dangerouslySetInnerHTML={{__html: `
+        @keyframes spinner-border {
+          to { transform: rotate(360deg); }
+        }
+      `}} />
       <PageHeader
         title="Dashboard"
         subtitle="Track your internship and job pipeline performance in one place."
@@ -303,8 +314,8 @@ export default function DashboardPage() {
         <MetricCard
           label="Total Applied"
           value={metrics?.totalApplied ?? '-'}
-          color={metricColors.applied ?? '#1e3a8a'}
-          onColorChange={(color) => updateMetricColor('applied', color)}
+          color="#1e3a8a"
+          transparent={true}
         />
 
         <DndContext
@@ -388,11 +399,11 @@ export default function DashboardPage() {
         <SankeyFunnel
           data={funnelQuery.data}
           stageColors={{
-            applied: metricColors.applied ?? '#1e3a8a',
-            oa: metricColors.oa ?? '#0f766e',
-            interview: metricColors.interviews ?? '#6d28d9',
-            offer: metricColors.offers ?? '#166534',
-            rejected: metricColors.rejected ?? '#991b1b',
+            applied: metricColors['Applied'] ?? '#1e3a8a',
+            oa: metricColors['OnlineAssessment'] ?? '#0f766e',
+            interview: metricColors['Interview'] ?? '#6d28d9',
+            offer: metricColors['Offer'] ?? '#166534',
+            rejected: metricColors['Rejected'] ?? '#991b1b',
           }}
         />
       )}
@@ -408,9 +419,9 @@ export default function DashboardPage() {
                 <XAxis dataKey="date" />
                 <YAxis />
                 <Tooltip />
-                <Line type="monotone" dataKey="applied" stroke={metricColors.applied} strokeWidth={2} />
-                <Line type="monotone" dataKey="interview" stroke={metricColors.interviews} strokeWidth={2} />
-                <Line type="monotone" dataKey="offer" stroke={metricColors.offers} strokeWidth={2} />
+                <Line type="monotone" dataKey="applied" stroke={metricColors['Applied'] ?? '#1e3a8a'} strokeWidth={2} />
+                <Line type="monotone" dataKey="interview" stroke={metricColors['Interview'] ?? '#6d28d9'} strokeWidth={2} />
+                <Line type="monotone" dataKey="offer" stroke={metricColors['Offer'] ?? '#166534'} strokeWidth={2} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -424,16 +435,7 @@ export default function DashboardPage() {
                 <Pie
                   data={analyticsData?.stageDistribution?.map((item: { stage: string; value: number }) => ({
                     ...item,
-                    fill:
-                      item.stage === 'Rejected'
-                        ? metricColors.rejected
-                        : item.stage === 'Offer'
-                          ? metricColors.offers
-                          : item.stage === 'Interview'
-                            ? metricColors.interviews
-                            : item.stage === 'OnlineAssessment'
-                              ? metricColors.oa
-                              : metricColors.applied,
+                    fill: metricColors[item.stage] ?? '#cbd5e1',
                   })) ?? []
                 }
                   dataKey="value"
@@ -453,16 +455,7 @@ export default function DashboardPage() {
               <BarChart
                 data={analyticsData?.stageDistribution?.map((item: { stage: string; value: number }) => ({
                   ...item,
-                  fill:
-                    item.stage === 'Rejected'
-                      ? metricColors.rejected
-                      : item.stage === 'Offer'
-                        ? metricColors.offers
-                        : item.stage === 'Interview'
-                          ? metricColors.interviews
-                          : item.stage === 'OnlineAssessment'
-                            ? metricColors.oa
-                            : metricColors.applied,
+                  fill: metricColors[item.stage] ?? '#cbd5e1',
                 })) ?? []
               }
               >
@@ -470,7 +463,7 @@ export default function DashboardPage() {
                 <XAxis dataKey="stage" />
                 <YAxis />
                 <Tooltip />
-                <Bar dataKey="value" fill={metricColors.applied} radius={[6, 6, 0, 0]} />
+                <Bar dataKey="value" fill={metricColors['Applied'] ?? '#1e3a8a'} radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
