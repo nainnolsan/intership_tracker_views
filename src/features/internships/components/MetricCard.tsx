@@ -185,13 +185,15 @@ export default function MetricCard({ label, value, color, onColorChange, onRenam
                   onDelete();
                 }}
               >
-                🗑️ Delete Stage
+                Delete Stage
               </button>
             )}
           </div>
         </details>
       ) : null}
-      <p className="metric-label">{label}</p>
+      <div style={{ paddingRight: onColorChange ? '24px' : '0' }}>
+        <p className="metric-label" style={{ wordWrap: 'break-word', overflowWrap: 'anywhere', lineHeight: 1.3 }}>{label}</p>
+      </div>
       <p className="metric-value">{value}</p>
     </article>
   );
