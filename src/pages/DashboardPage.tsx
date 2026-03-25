@@ -272,6 +272,7 @@ export default function DashboardPage() {
 
     return layout
       .filter((item) => item.enabled)
+      .filter((item) => item.id.toLowerCase() !== 'applied' && item.label.toLowerCase() !== 'applied')
       .map((item) => {
         const existing = byStage.get(item.id);
         if (existing) {
