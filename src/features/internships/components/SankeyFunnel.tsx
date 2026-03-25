@@ -161,18 +161,38 @@ export default function SankeyFunnel({ data, stageColors, stageOrder }: SankeyFu
   const innerBottom = chartHeight - 24;
   const innerHeight = innerBottom - innerTop;
 
-  const nodeValues = data.nodes.map((_, idx) => {
-    const outgoing = data.links
+  const processedNodes = data.nodes.map((n) => ({ name: n.name, isDropOff: false, dropLevel: 0 }));
+  const processedLinks = data.links.map((l) => ({ ...l }));
+  const rejectedNodeIndex = processedNodes.findIndex((n) => isRejectedNode(n.name));
+  
+  if (rejectedNodeIndex !== -1) {
+    for (let i = 0; i < processedLinks.length; i++) {
+        const link = processedLinks[i];
+        if (link.target === rejectedNodeIndex && link.value > 0) {
+            const sourceNode = processedNodes[link.source];
+            const dropLevel = getNodeLevel(sourceNode.name, stageOrder) + 1;
+            
+            const dropName = `Rejected - ${sourceNode.name}`;
+            const newIndex = processedNodes.length;
+            
+            processedNodes.push({ name: dropName, isDropOff: true, dropLevel });
+            processedLinks[i].target = newIndex;
+        }
+    }
+  }
+
+  const nodeValues = processedNodes.map((_, idx) => {
+    const outgoing = processedLinks
       .filter((link) => link.source === idx)
       .reduce((sum, link) => sum + link.value, 0);
-    const incoming = data.links
+    const incoming = processedLinks
       .filter((link) => link.target === idx)
       .reduce((sum, link) => sum + link.value, 0);
     return Math.max(outgoing, incoming, 0);
   });
 
   const activeNodeIndices = new Set<number>();
-  data.links
+  processedLinks
     .filter((link) => link.value > 0)
     .forEach((link) => {
       activeNodeIndices.add(link.source);
@@ -181,7 +201,7 @@ export default function SankeyFunnel({ data, stageColors, stageOrder }: SankeyFu
 
   const totalApplied = Math.max(
     nodeValues[0] ?? 0,
-    data.links.filter((link) => link.source === 0).reduce((sum, link) => sum + link.value, 0),
+    processedLinks.filter((link) => link.source === 0).reduce((sum, link) => sum + link.value, 0),
     1,
   );
 
@@ -191,19 +211,19 @@ export default function SankeyFunnel({ data, stageColors, stageOrder }: SankeyFu
   const columnWidth = (viewWidth - 88) / Math.max(1, maxLevel);
   const getColumnX = (lvl: number) => 44 + lvl * columnWidth;
 
-  const nodes: LayoutNode[] = data.nodes.flatMap((node, idx) => {
+  const nodes: LayoutNode[] = processedNodes.flatMap((node, idx) => {
     if (!activeNodeIndices.has(idx)) {
       return [];
     }
 
-    const level = getNodeLevel(node.name, stageOrder);
+    const level = node.isDropOff ? Math.min(node.dropLevel, maxLevel) : getNodeLevel(node.name, stageOrder);
     const height = nodeValues[idx] * verticalUnit;
     const x = getColumnX(level);
 
     let y = innerTop;
     if (level === 0) {
       y = innerTop + (innerHeight - height) / 2;
-    } else if (isRejectedNode(node.name)) {
+    } else if (node.isDropOff || isRejectedNode(node.name)) {
       y = innerBottom - height;
     } else if (isOfferNode(node.name)) {
       y = innerTop + (innerHeight - height) / 2;
@@ -229,11 +249,11 @@ export default function SankeyFunnel({ data, stageColors, stageOrder }: SankeyFu
 
   const nodeByIndex = new Map<number, LayoutNode>(nodes.map((n) => [n.index, n]));
 
-  const orderedLinks: LayoutLink[] = data.links
+  const orderedLinks: LayoutLink[] = processedLinks
     .filter((link) => link.value > 0)
     .map((link) => {
-      const target = data.nodes[link.target]?.name;
-      const source = data.nodes[link.source]?.name;
+      const target = processedNodes[link.target]?.name;
+      const source = processedNodes[link.source]?.name;
       return {
         ...link,
         color: pickNodeColor(target ?? source, stageColors),
