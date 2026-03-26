@@ -20,6 +20,7 @@ import { CSS } from '@dnd-kit/utilities';
 import MetricCard from '../features/internships/components/MetricCard';
 import PageHeader from '../features/internships/components/PageHeader';
 import SankeyFunnel from '../features/internships/components/SankeyFunnel';
+import AddStageModal from '../features/internships/components/AddStageModal';
 import PipelineColumn from '../features/internships/components/PipelineColumn';
 import { useDashboardMetrics, useFunnelFlow, useAnalyticsOverview, usePipelineBoard, useSaveStageLayout, useStageLayout } from '../features/internships/hooks/useInternshipsData';
 import type { ApplicationDTO, SaveStageLayoutItemDTO } from '../types/internships';
@@ -95,8 +96,7 @@ function SortableMetricWrapper({ id, children }: { id: string; children: React.R
 export default function DashboardPage() {
   const [metricColors, setMetricColors] = useState<Record<MetricKey, string | undefined>>(readStoredMetricColors);
   const [stageLayout, setStageLayout] = useState<StageLayoutItem[]>([]);
-  const [isAddingStage, setIsAddingStage] = useState(false);
-  const [newStageName, setNewStageName] = useState('');
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -228,33 +228,37 @@ export default function DashboardPage() {
     void persistStageLayout(stageLayout.filter((item) => item.id !== id));
   };
 
-  const addStage = () => {
-    const trimmed = sanitizeStageId(newStageName);
-    if (!trimmed) {
-      return;
-    }
+  const handleAddStageModalSave = (newName: string, color: string, insertAfterId: string | null) => {
+    const trimmed = sanitizeStageId(newName);
+    if (!trimmed) return;
 
     if (stageLayout.some((item) => item.id.toLowerCase() === trimmed.toLowerCase())) {
       window.alert('Stage already exists in your layout.');
       return;
     }
 
-    if (!window.confirm(`Are you sure you want to add stage "${trimmed}"?`)) {
-      return;
+    const newStageItem = {
+      id: trimmed,
+      label: trimmed,
+      enabled: true,
+      isCustom: true,
+    };
+
+    const nextLayout = [...stageLayout];
+    if (insertAfterId === null) {
+      nextLayout.unshift(newStageItem);
+    } else {
+      const idx = nextLayout.findIndex(i => i.id === insertAfterId);
+      if (idx !== -1) {
+         nextLayout.splice(idx + 1, 0, newStageItem);
+      } else {
+         nextLayout.push(newStageItem);
+      }
     }
 
-    const next = [
-      ...stageLayout,
-      {
-        id: trimmed,
-        label: trimmed,
-        enabled: true,
-        isCustom: true,
-      },
-    ];
-    void persistStageLayout(next);
-    setNewStageName('');
-    setIsAddingStage(false);
+    void persistStageLayout(nextLayout);
+    updateMetricColor(trimmed, color);
+    setIsAddModalOpen(false);
   };
 
   const pipelineColumns = useMemo(() => {
@@ -344,48 +348,44 @@ export default function DashboardPage() {
           </SortableContext>
         </DndContext>
 
-        {isAddingStage ? (
-          <article className="metric-card metric-card-solid new-stage-card" style={{ '--metric-solid-bg': 'transparent', '--metric-solid-ink': 'var(--ink)', border: '1px dashed var(--line-strong)' } as React.CSSProperties}>
-            <input
-              autoFocus
-              className="inline-edit-input"
-              value={newStageName}
-              onChange={(e) => setNewStageName(e.target.value)}
-              placeholder="New stage..."
-              style={{ background: 'var(--paper)', fontSize: '0.9rem', width: '100%', marginBottom: '10px' }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') addStage();
-                if (e.key === 'Escape') setIsAddingStage(false);
-              }}
-              onBlur={() => {
-                if(newStageName.trim() !== '') addStage();
-                else setIsAddingStage(false);
-              }}
-            />
-          </article>
-        ) : (
-          <button 
-            type="button" 
-            className="metric-card add-metric-btn" 
-            onClick={() => setIsAddingStage(true)}
-            style={{ 
-              background: 'transparent', 
-              border: '1px dashed var(--line)', 
-              color: 'var(--muted)', 
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              lineHeight: 1,
-              transition: 'all 0.2s',
-              fontWeight: 500
-            }}
-            onMouseOver={(e) => { e.currentTarget.style.borderColor = 'var(--ink)'; e.currentTarget.style.color = 'var(--ink)'; }}
-            onMouseOut={(e) => { e.currentTarget.style.borderColor = 'var(--line)'; e.currentTarget.style.color = 'var(--muted)'; }}
-          >
-             + Add Stage
-          </button>
-        )}
+        <button 
+          type="button" 
+          className="metric-card add-metric-btn" 
+          onClick={() => setIsAddModalOpen(true)}
+          style={{ 
+            background: 'color-mix(in srgb, var(--paper) 60%, transparent)', 
+            border: '1px solid var(--line)', 
+            color: 'var(--muted)', 
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '2.4rem',
+            fontWeight: 300,
+            lineHeight: 0,
+            transition: 'all 0.2s ease',
+            minHeight: '100px'
+          }}
+          onMouseOver={(e) => { 
+            e.currentTarget.style.borderColor = 'var(--line-strong)'; 
+            e.currentTarget.style.color = 'var(--ink)'; 
+            e.currentTarget.style.background = 'color-mix(in srgb, var(--brand-soft) 40%, transparent)'; 
+          }}
+          onMouseOut={(e) => { 
+            e.currentTarget.style.borderColor = 'var(--line)'; 
+            e.currentTarget.style.color = 'var(--muted)'; 
+            e.currentTarget.style.background = 'color-mix(in srgb, var(--paper) 60%, transparent)'; 
+          }}
+        >
+           +
+        </button>
+
+        <AddStageModal
+          isOpen={isAddModalOpen}
+          onClose={() => setIsAddModalOpen(false)}
+          onSave={handleAddStageModalSave}
+          stageLayout={pipelineColumns.map(c => ({ id: c.stage, label: c.label }))}
+        />
 
         <MetricCard
           label="Conversion Rate"
