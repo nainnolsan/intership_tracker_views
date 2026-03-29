@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Bar, BarChart, CartesianGrid, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, AreaChart, Area, Cell } from 'recharts';
 import type { DragEndEvent } from '@dnd-kit/core';
 import {
   DndContext,
@@ -21,7 +21,6 @@ import MetricCard from '../features/internships/components/MetricCard';
 import PageHeader from '../features/internships/components/PageHeader';
 import SankeyFunnel from '../features/internships/components/SankeyFunnel';
 import AddStageModal from '../features/internships/components/AddStageModal';
-import PipelineColumn from '../features/internships/components/PipelineColumn';
 import { useDashboardMetrics, useFunnelFlow, useAnalyticsOverview, usePipelineBoard, useSaveStageLayout, useStageLayout } from '../features/internships/hooks/useInternshipsData';
 import type { ApplicationDTO, SaveStageLayoutItemDTO } from '../types/internships';
 
@@ -417,15 +416,31 @@ export default function DashboardPage() {
           <h2>Daily Activity</h2>
           <div className="chart-box">
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={analyticsData?.daily ?? []}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip />
-                <Line type="monotone" dataKey="applied" stroke={metricColors['Applied'] ?? '#1e3a8a'} strokeWidth={2} />
-                <Line type="monotone" dataKey="interview" stroke={metricColors['Interview'] ?? '#6d28d9'} strokeWidth={2} />
-                <Line type="monotone" dataKey="offer" stroke={metricColors['Offer'] ?? '#166534'} strokeWidth={2} />
-              </LineChart>
+              <AreaChart data={analyticsData?.daily ?? []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorApplied" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={metricColors['Applied'] ?? '#1e3a8a'} stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor={metricColors['Applied'] ?? '#1e3a8a'} stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="colorInterview" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={metricColors['Interview'] ?? '#6d28d9'} stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor={metricColors['Interview'] ?? '#6d28d9'} stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="colorOffer" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={metricColors['Offer'] ?? '#166534'} stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor={metricColors['Offer'] ?? '#166534'} stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="date" stroke="var(--muted)" tick={{ fill: 'var(--muted)', fontSize: 12 }} tickLine={false} axisLine={false} />
+                <YAxis stroke="var(--muted)" tick={{ fill: 'var(--muted)', fontSize: 12 }} tickLine={false} axisLine={false} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: 'var(--paper)', borderRadius: '12px', border: '1px solid var(--line)', color: 'var(--ink)' }} 
+                  itemStyle={{ color: 'var(--ink)' }}
+                />
+                <Area type="monotone" dataKey="applied" stroke={metricColors['Applied'] ?? '#1e3a8a'} fillOpacity={1} fill="url(#colorApplied)" strokeWidth={3} />
+                <Area type="monotone" dataKey="interview" stroke={metricColors['Interview'] ?? '#6d28d9'} fillOpacity={1} fill="url(#colorInterview)" strokeWidth={3} />
+                <Area type="monotone" dataKey="offer" stroke={metricColors['Offer'] ?? '#166534'} fillOpacity={1} fill="url(#colorOffer)" strokeWidth={3} />
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         </article>
@@ -439,13 +454,23 @@ export default function DashboardPage() {
                   data={analyticsData?.stageDistribution?.map((item: { stage: string; value: number }) => ({
                     ...item,
                     fill: metricColors[item.stage] ?? '#cbd5e1',
-                  })) ?? []
-                }
+                  })) ?? []}
                   dataKey="value"
                   nameKey="stage"
-                  outerRadius={100}
+                  innerRadius={75}
+                  outerRadius={110}
+                  paddingAngle={6}
+                  cornerRadius={8}
+                  stroke="none"
+                >
+                  {(analyticsData?.stageDistribution ?? []).map((entry: { stage: string; value: number }, index: number) => (
+                    <Cell key={`cell-${index}`} fill={metricColors[entry.stage] ?? '#cbd5e1'} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  contentStyle={{ backgroundColor: 'var(--paper)', borderRadius: '12px', border: '1px solid var(--line)', color: 'var(--ink)' }} 
+                  itemStyle={{ color: 'var(--ink)', fontWeight: 600 }}
                 />
-                <Tooltip />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -456,30 +481,96 @@ export default function DashboardPage() {
           <div className="chart-box">
             <ResponsiveContainer width="100%" height={280}>
               <BarChart
-                data={analyticsData?.stageDistribution?.map((item: { stage: string; value: number }) => ({
-                  ...item,
-                  fill: metricColors[item.stage] ?? '#cbd5e1',
-                })) ?? []
-              }
+                data={analyticsData?.stageDistribution ?? []}
+                margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
               >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="stage" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="value" fill={metricColors['Applied'] ?? '#1e3a8a'} radius={[6, 6, 0, 0]} />
+                <XAxis dataKey="stage" stroke="var(--muted)" tick={{ fill: 'var(--muted)', fontSize: 12 }} tickLine={false} axisLine={false} />
+                <YAxis stroke="var(--muted)" tick={{ fill: 'var(--muted)', fontSize: 12 }} tickLine={false} axisLine={false} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: 'var(--paper)', borderRadius: '12px', border: '1px solid var(--line)', color: 'var(--ink)' }} 
+                  cursor={{ fill: 'color-mix(in srgb, var(--ink) 5%, transparent)', radius: 8 }}
+                />
+                <Bar dataKey="value" radius={[8, 8, 8, 8]} maxBarSize={45}>
+                  {(analyticsData?.stageDistribution ?? []).map((entry: { stage: string; value: number }, index: number) => (
+                    <Cell key={`cell-${index}`} fill={metricColors[entry.stage] ?? '#cbd5e1'} />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
         </article>
       </div>
 
-      <h2 style={{ marginTop: '2rem', marginBottom: '1rem', fontSize: '1.875rem', fontWeight: 'bold', color: 'var(--ink)' }}>Pipeline Board</h2>
-      {/* Old stage manager list removed */}
+      <h2 style={{ marginTop: '2rem', marginBottom: '1rem', fontSize: '1.875rem', fontWeight: 'bold', color: 'var(--ink)' }}>Pipeline Tracker</h2>
+      
+      <div className="pipeline-tracker-list" style={{ display: 'grid', gap: '0.8rem', paddingBottom: '3rem' }}>
+        {pipelineColumns.flatMap(c => c.applications).sort((a,b) => new Date(b.appliedAt).getTime() - new Date(a.appliedAt).getTime()).map(application => {
+          const currentIndex = pipelineColumns.findIndex(c => c.stage === application.stage);
+          
+          return (
+            <article key={application.id} className="pipeline-tracker-row" style={{ display: 'flex', alignItems: 'center', background: 'var(--paper)', border: '1px solid var(--line)', borderRadius: '16px', padding: '1.2rem 1.5rem', gap: '2.5rem', boxShadow: 'var(--shadow)' }}>
+              
+              <div style={{ flex: '0 0 250px' }}>
+                <h3 style={{ margin: 0, fontSize: '1.15rem', color: 'var(--ink)', fontWeight: 700 }}>{application.company}</h3>
+                <p style={{ margin: '0.25rem 0 0 0', color: 'var(--muted)', fontSize: '0.9rem', fontWeight: 500 }}>{application.roleTitle}</p>
+                <small style={{ display: 'block', marginTop: '0.4rem', color: 'var(--muted)', fontSize: '0.75rem', opacity: 0.8 }}>
+                  Applied: {new Date(application.appliedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                </small>
+              </div>
 
-      <div className="pipeline-board">
-        {pipelineColumns.map((column) => (
-          <PipelineColumn key={column.stage} column={column} label={column.label} />
-        ))}
+              <div className="pipeline-stepper" style={{ flex: 1, display: 'flex', alignItems: 'center', position: 'relative', padding: '0 1rem', paddingBottom: '1.2rem' }}>
+                {pipelineColumns.map((col, index) => {
+                  const isCompleted = index < currentIndex;
+                  const isCurrent = index === currentIndex;
+                  const color = metricColors[col.stage] ?? '#cbd5e1';
+                  
+                  return (
+                    <div key={col.stage} style={{ display: 'flex', alignItems: 'center', flex: index === pipelineColumns.length - 1 ? 0 : 1 }}>
+                      
+                      <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <div style={{
+                          width: isCurrent ? '22px' : '16px',
+                          height: isCurrent ? '22px' : '16px',
+                          borderRadius: '50%',
+                          background: isCompleted || isCurrent ? color : 'var(--line)',
+                          border: isCurrent ? `4px solid color-mix(in srgb, ${color} 30%, var(--paper))` : '2px solid var(--paper)',
+                          zIndex: 2,
+                          boxShadow: isCurrent ? `0 0 0 4px color-mix(in srgb, ${color} 20%, transparent)` : 'none',
+                          transition: 'all 0.3s ease'
+                        }} title={col.label} />
+                        
+                        <span style={{ 
+                          position: 'absolute', top: '100%', marginTop: '0.8rem',
+                          fontSize: '0.75rem', fontWeight: isCurrent ? 700 : 500,
+                          color: isCompleted || isCurrent ? 'var(--ink)' : 'var(--muted)',
+                          whiteSpace: 'nowrap',
+                          transition: 'all 0.3s ease'
+                        }}>
+                          {col.label}
+                        </span>
+                      </div>
+
+                      {index < pipelineColumns.length - 1 && (
+                         <div style={{ 
+                           flex: 1, height: '4px',
+                           background: isCompleted ? color : 'var(--line)',
+                           marginLeft: '-4px', marginRight: '-4px', zIndex: 1,
+                           opacity: isCompleted ? 0.8 : 0.3,
+                           transition: 'all 0.3s ease'
+                         }} />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </article>
+          );
+        })}
+        {pipelineColumns.flatMap(c => c.applications).length === 0 && (
+          <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--muted)', background: 'var(--paper)', borderRadius: '16px', border: '1px dashed var(--line)' }}>
+            <p>No applications found. Add one to see the journey tracker.</p>
+          </div>
+        )}
       </div>
     </section>
   );

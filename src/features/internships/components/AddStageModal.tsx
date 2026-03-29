@@ -21,8 +21,11 @@ export default function AddStageModal({ isOpen, onClose, onSave, stageLayout }: 
 
   useEffect(() => {
     if (isOpen) {
+       // eslint-disable-next-line react-hooks/set-state-in-effect
        setName('');
+       // eslint-disable-next-line react-hooks/set-state-in-effect
        setColor(PRESET_COLORS[4]);
+       // eslint-disable-next-line react-hooks/set-state-in-effect
        setInsertAfterId(stageLayout.length > 0 ? stageLayout[stageLayout.length - 1].id : null);
     }
   }, [isOpen, stageLayout]);
