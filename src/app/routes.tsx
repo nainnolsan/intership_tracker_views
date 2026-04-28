@@ -5,6 +5,7 @@ import { hasAccessToken, redirectToCentralLogin } from '../auth/session';
 import ApplicationsPage from '../pages/ApplicationsPage';
 import DashboardPage from '../pages/DashboardPage';
 import EmailCenterPage from '../pages/EmailCenterPage';
+import { JobDiscoveryPage } from '../pages/JobDiscoveryPage';
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const location = useLocation();
@@ -32,6 +33,7 @@ export function AppRoutes() {
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="applications" element={<ApplicationsPage />} />
+        <Route path="discovery" element={<JobDiscoveryPage />} />
         <Route path="email-center" element={<EmailCenterPage />} />
       </Route>
     </Routes>
